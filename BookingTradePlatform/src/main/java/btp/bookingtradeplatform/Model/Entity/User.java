@@ -7,6 +7,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.time.LocalDateTime;
+
 @Getter
 @Setter
 @AllArgsConstructor
@@ -18,10 +20,17 @@ public abstract class User {
     @GeneratedValue (strategy = GenerationType.IDENTITY)
     private Long id;
 
+    private String username;
     private String email;
     private String password;
     private String fullName;
+    private String profileImage;
 
     @Enumerated(EnumType.STRING)
     private Role role; // CUSTOMER, SELLER, ADMIN
+
+    private Boolean isActive;
+
+    private LocalDateTime createdAt;
+    private LocalDateTime lastLoginAt;
 }
