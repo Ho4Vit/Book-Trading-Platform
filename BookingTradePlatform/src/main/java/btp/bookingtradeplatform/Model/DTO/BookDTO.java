@@ -5,6 +5,7 @@ import btp.bookingtradeplatform.Model.Entity.Category;
 import btp.bookingtradeplatform.Model.Enum.BookFormat;
 import lombok.*;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -22,7 +23,7 @@ public class BookDTO {
     private int pageCount;
     private String coverImage;
     private List<String> additionalImages;
-    private double price;
+    private BigDecimal price;
     private int stock;
     private Long sellerId;
     private Long seriesId;

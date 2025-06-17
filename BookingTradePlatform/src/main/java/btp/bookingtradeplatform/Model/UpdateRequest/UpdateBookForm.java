@@ -3,6 +3,7 @@ package btp.bookingtradeplatform.Model.UpdateRequest;
 import btp.bookingtradeplatform.Model.Enum.BookFormat;
 import lombok.*;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @Getter
@@ -18,7 +19,7 @@ public class UpdateBookForm {
     private Integer pageCount;
     private String coverImage;
     private List<String> additionalImages;
-    private Double price;
+    private BigDecimal price;
     private Integer stock;
 
     private Long seriesId;

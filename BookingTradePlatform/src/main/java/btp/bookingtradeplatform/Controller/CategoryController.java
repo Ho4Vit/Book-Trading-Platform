@@ -12,13 +12,13 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/categories")
+@RequestMapping("/api/v1/categories")
 public class CategoryController {
 
     @Autowired
     private CategoryService categoryService;
 
-    @GetMapping
+    @GetMapping("/all")
     public ResponseEntity<ResponseData<List<CategoryDTO>>> getAllCategories() {
         return categoryService.getAllCategories();
     }
@@ -28,7 +28,7 @@ public class CategoryController {
         return categoryService.getCategoryById(id);
     }
 
-    @PostMapping
+    @PostMapping("/create")
     public ResponseEntity<ResponseData<CategoryDTO>> createCategory(@RequestBody CreateCategoryRequest request) {
         return categoryService.createCategory(request);
     }

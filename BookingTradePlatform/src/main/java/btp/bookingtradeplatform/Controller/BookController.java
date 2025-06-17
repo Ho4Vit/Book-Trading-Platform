@@ -12,13 +12,13 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/books")
+@RequestMapping("/api/v1/books")
 public class BookController {
 
     @Autowired
     private BookService bookService;
 
-    @GetMapping
+    @GetMapping("/all")
     public ResponseEntity<ResponseData<List<BookDTO>>> getAllBooks() {
         return bookService.getAllBooks();
     }
@@ -28,7 +28,7 @@ public class BookController {
         return bookService.getBookById(id);
     }
 
-    @PostMapping
+    @PostMapping("/create")
     public ResponseEntity<ResponseData<BookDTO>> createBook(@RequestBody CreateBookRequest request) {
         return bookService.createBook(request);
     }

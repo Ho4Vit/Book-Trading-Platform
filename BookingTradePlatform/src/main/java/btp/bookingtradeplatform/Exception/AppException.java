@@ -18,9 +18,19 @@ public enum AppException {
     USER_NOT_FOUND("USR_003", "Không tìm thấy người dùng", HttpStatus.NOT_FOUND),
     WRONG_PASSWORD("USR_004", "Mật khẩu không đúng", HttpStatus.BAD_REQUEST),
     ALREADY_EXISTS("USR_005", "Dữ liệu đã được tạo trước", HttpStatus.BAD_REQUEST),
+    INVALID_CREDENTIALS("AUTH_001", "Tài khoản hoặc mật khẩu không đúng", HttpStatus.UNAUTHORIZED),
+    ACCOUNT_INACTIVE("AUTH_002", "Tài khoản chưa được kích hoạt", HttpStatus.UNAUTHORIZED),
+    ACCOUNT_LOCKED("AUTH_003", "Tài khoản đã bị khoá", HttpStatus.UNAUTHORIZED),
+    TOKEN_EXPIRED("AUTH_004", "Token đã hết hạn", HttpStatus.UNAUTHORIZED),
+    TOKEN_INVALID("AUTH_005", "Token không hợp lệ", HttpStatus.UNAUTHORIZED),
+    TOKEN_BLACKLISTED("AUTH_006", "Token đã bị thu hồi", HttpStatus.UNAUTHORIZED),
+    PERMISSION_DENIED("AUTH_008", "Không có quyền truy cập tài nguyên này", HttpStatus.FORBIDDEN),
+    LOGOUT_SUCCESS("AUTH_009", "Đăng xuất thành công", HttpStatus.OK),
 
-    // ========== Seller ==========
+    // ========== Seller & Customer==========
     SELLER_NOT_FOUND("SEL_001", "Không tìm thấy người bán", HttpStatus.NOT_FOUND),
+    CUSTOMER_NOT_FOUND("CUS_001", "Không tìm thấy khách hàng", HttpStatus.NOT_FOUND),
+
 
     // ========== Book ==========
     BOOK_NOT_FOUND("BOK_001", "Không tìm thấy sách", HttpStatus.NOT_FOUND),
@@ -37,6 +47,8 @@ public enum AppException {
     // ========== Success request ==========
     SUCCESS("SUC_200", "Thành công", HttpStatus.OK),
     CREATED("SUC_201", "Đã tạo", HttpStatus.CREATED);
+
+
 
     private final String code;
     private final String message;
