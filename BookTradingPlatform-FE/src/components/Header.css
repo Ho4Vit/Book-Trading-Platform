@@ -1,0 +1,32 @@
+.site-header {
+    background-color: #333;
+    color: white;
+    padding: 16px 24px;
+}
+
+.header-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.logo {
+    font-size: 24px;
+    font-weight: bold;
+}
+
+.nav-links a,
+.nav-links button {
+    color: white;
+    background: none;
+    border: none;
+    margin-left: 16px;
+    cursor: pointer;
+    font-size: 16px;
+    text-decoration: none;
+}
+
+.nav-links button:hover,
+.nav-links a:hover {
+    text-decoration: underline;
+}
