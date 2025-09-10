@@ -30,6 +30,8 @@ public class Payment {
 
     private LocalDateTime paymentDate;
 
+    private boolean isAccepted = false;
+
     @OneToOne
     @JoinColumn(name = "order_id")
     private Order order;

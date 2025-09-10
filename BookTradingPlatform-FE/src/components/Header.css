@@ -1,42 +1,83 @@
+/* Header container */
 .header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    background: #2c3e50;
-    padding: 15px 40px;
-    color: white;
+    padding: 0.5rem 1rem;
+    background-color: #fff;
+    border-bottom: 1px solid #ddd;
 }
 
-.logo {
-    font-size: 22px;
-    font-weight: bold;
+/* Navigation links */
+.nav {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
 }
 
-.nav a {
-    margin: 0 15px;
-    text-decoration: none;
-    color: white;
-    font-weight: 500;
+/* Avatar + username */
+.user-dropdown {
+    position: relative;
+    display: flex;
+    align-items: center;
+    cursor: pointer;
 }
 
-.nav a:hover {
-    color: #f39c12;
+/* Avatar image */
+.user-info {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem; /* khoảng cách giữa avatar và tên */
 }
 
+.user-info .avatar {
+    width: 32px;      /* chỉnh kích thước vừa header */
+    height: 32px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+/* Dropdown menu */
+.dropdown-menu {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    background: white;
+    border: 1px solid #ccc;
+    padding: 0.5rem;
+    min-width: 150px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+    z-index: 10;
+}
+
+.dropdown-menu a,
+.dropdown-menu button {
+    display: block;
+    width: 100%;
+    padding: 0.3rem 0;
+    text-align: left;
+    border: none;
+    background: none;
+    cursor: pointer;
+}
+
+.dropdown-menu button:hover,
+.dropdown-menu a:hover {
+    background-color: #f0f0f0;
+}
+
+/* Cart badge */
 .cart-link {
     position: relative;
-    text-decoration: none;
-    color: white;
 }
 
 .cart-badge {
     position: absolute;
-    top: -8px;
-    right: -12px;
+    top: -5px;
+    right: -10px;
     background: red;
     color: white;
-    font-size: 12px;
-    font-weight: bold;
     border-radius: 50%;
+    font-size: 0.7rem;
     padding: 2px 6px;
 }

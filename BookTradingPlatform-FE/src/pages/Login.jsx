@@ -2,10 +2,12 @@ import React, { useState, useContext } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { AuthContext } from "../context/AuthContext";
+import { CartContext } from "../context/CartContext";
 import "./Login.css";
 
 function Login() {
     const { login } = useContext(AuthContext);
+    const { fetchCart } = useContext(CartContext);
     const [username, setUsername] = useState("");
     const [password, setPassword] = useState("");
     const [error, setError] = useState("");
@@ -18,25 +20,33 @@ function Login() {
         setLoading(true);
 
         try {
-            const res = await axios.post(
-                "http://localhost:8080/api/auth/login",
-                { username, password },
-                { headers: { "Content-Type": "application/json" } }
-            );
+            const res = await axios.post("http://localhost:8080/api/auth/login", {
+                username,
+                password
+            });
 
             const userData = res.data.data; // { token, role, userId }
-            login({ ...userData, username }); // lưu vào context
 
-            // Nếu backend trả role có prefix "ROLE_", loại bỏ
+            // Lưu vào AuthContext
+            login({ ...userData, username });
+
+            // Xử lý role
             const role = userData.role.replace("ROLE_", "").toUpperCase();
+            console.log("Role detected:", role); // debug
 
-            if (role === "CUSTOMER") navigate("/");      // trang khách hàng
-            else if (role === "ADMIN") navigate("/admin"); // trang admin
-            else if (role === "SELLER") navigate("/seller"); // trang seller
-            else navigate("/"); // fallback
+            if (role === "CUSTOMER") {
+                fetchCart(userData.userId);   // fetch cart cho customer
+                navigate("/");                // về trang Home
+            } else if (role === "SELLER") {
+                navigate("/seller/books");    // vào trang quản lý sách của seller
+            } else if (role === "ADMIN") {
+                navigate("/admin");           // vào trang admin
+            } else {
+                navigate("/");                // mặc định về Home
+            }
         } catch (err) {
-            setError("Sai tài khoản hoặc mật khẩu!");
             console.error("Login failed:", err);
+            setError("Sai tài khoản hoặc mật khẩu!");
         } finally {
             setLoading(false);
         }

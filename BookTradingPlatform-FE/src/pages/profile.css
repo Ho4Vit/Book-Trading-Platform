@@ -1,0 +1,39 @@
+.profile-container {
+    max-width: 600px;
+    margin: 20px auto;
+    padding: 20px;
+}
+
+.profile-card {
+    border: 1px solid #ddd;
+    padding: 20px;
+    border-radius: 10px;
+}
+
+.profile-avatar {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    object-fit: cover;
+    margin-bottom: 20px;
+}
+
+.profile-form label {
+    display: block;
+    margin-bottom: 10px;
+}
+
+.profile-form input,
+.profile-form select {
+    width: 100%;
+    padding: 5px;
+    margin-top: 5px;
+}
+
+.profile-form-buttons {
+    margin-top: 15px;
+}
+
+.profile-form-buttons button {
+    margin-right: 10px;
+}
