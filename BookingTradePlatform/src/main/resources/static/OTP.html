@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>OTP Email</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f0f2f5;
+            margin: 0;
+            padding: 0;
+        }
+        /* Header */
+        .header {
+            background-color: #2196F3; /* Màu xanh dương nhẹ */
+            color: #ffffff;
+            padding: 20px;
+            text-align: center;
+            border-radius: 10px 10px 0 0;
+        }
+        .header h1 {
+            font-size: 24px;
+            margin: 0;
+        }
+
+        /* Thêm chữ DABS */
+        .header .brand {
+            font-size: 18px;
+            font-weight: bold;
+            color: #ffffff;
+            margin-top: 10px;
+        }
+
+        /* OTP container */
+        .otp-container {
+            max-width: 400px;
+            margin: 30px auto;
+            padding: 30px 20px;
+            background-color: #ffffff;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+
+        .otp-container h2 {
+            color: #333333;
+            margin-bottom: 20px;
+            font-size: 20px;
+        }
+
+        .otp-code {
+            font-size: 32px;
+            font-weight: bold;
+            color: #2196F3; /* Màu xanh dương */
+            margin: 20px 0;
+            letter-spacing: 5px;
+        }
+
+        .otp-container p {
+            color: #555555;
+            font-size: 16px;
+            margin-top: 20px;
+        }
+
+        /* Footer */
+        .footer {
+            background-color: #2196F3; /* Màu xanh dương nhẹ */
+            color: #ffffff;
+            text-align: center;
+            padding: 10px;
+            border-radius: 0 0 10px 10px;
+        }
+
+        .footer p {
+            margin: 0;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="header">
+    <h1>Xác Minh Tài Khoản</h1>
+</div>
+
+<!-- OTP Container -->
+<div class="otp-container">
+    <h2>Mã OTP của bạn là:</h2>
+    <div class="otp-code" th:text="${otp}">123456</div> <!-- Thymeleaf sẽ thay thế giá trị otp -->
+    <p>Vui lòng nhập mã OTP này để hoàn tất việc xác minh tài khoản của bạn, mã sẽ hết hiệu lực sau 5 phút.</p>
+</div>
+
+<!-- Footer -->
+<div class="footer">
+    <p>&copy;DABS copyright.</p>
+</div>
+
+</body>
+</html>

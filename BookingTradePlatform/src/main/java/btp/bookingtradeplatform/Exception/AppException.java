@@ -16,6 +16,7 @@ public enum AppException {
     EMAIL_ALREADY_EXISTS("USR_001", "Email đã được sử dụng", HttpStatus.BAD_REQUEST),
     USERNAME_ALREADY_EXISTS("USR_002", "Username đã được sử dụng", HttpStatus.BAD_REQUEST),
     USER_NOT_FOUND("USR_003", "Không tìm thấy người dùng", HttpStatus.NOT_FOUND),
+    EMAIL_NOT_FOUND("USR_003", "Không tìm thấy email hoặc email nhập sai", HttpStatus.NOT_FOUND),
     WRONG_PASSWORD("USR_004", "Mật khẩu không đúng", HttpStatus.BAD_REQUEST),
     ALREADY_EXISTS("USR_005", "Dữ liệu đã được tạo trước", HttpStatus.BAD_REQUEST),
     INVALID_CREDENTIALS("AUTH_001", "Tài khoản hoặc mật khẩu không đúng", HttpStatus.UNAUTHORIZED),
@@ -26,7 +27,8 @@ public enum AppException {
     TOKEN_BLACKLISTED("AUTH_006", "Token đã bị thu hồi", HttpStatus.UNAUTHORIZED),
     PERMISSION_DENIED("AUTH_008", "Không có quyền truy cập tài nguyên này", HttpStatus.FORBIDDEN),
     LOGOUT_SUCCESS("AUTH_009", "Đăng xuất thành công", HttpStatus.OK),
-
+    OTP_REQUIRED("AUTH_010", "Vui lòng nhập mã OTP", HttpStatus.BAD_REQUEST),
+    OTP_INVALID("AUTH_011", "Mã OTP không hợp lệ", HttpStatus.BAD_REQUEST),
     // ========== Seller & Customer==========
     SELLER_NOT_FOUND("SEL_001", "Không tìm thấy người bán", HttpStatus.NOT_FOUND),
     CUSTOMER_NOT_FOUND("CUS_001", "Không tìm thấy khách hàng", HttpStatus.NOT_FOUND),
@@ -46,7 +48,7 @@ public enum AppException {
 
     // ========== Success request ==========
     SUCCESS("SUC_200", "Thành công", HttpStatus.OK),
-    CREATED("SUC_201", "Đã tạo", HttpStatus.CREATED);
+    CREATED("SUC_201", "Đã tạo", HttpStatus.CREATED), ;
 
 
 

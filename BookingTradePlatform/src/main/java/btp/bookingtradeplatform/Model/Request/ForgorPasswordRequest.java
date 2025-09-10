@@ -1,4 +1,4 @@
-package btp.bookingtradeplatform.Model.UpdateRequest;
+package btp.bookingtradeplatform.Model.Request;
 
 
 import lombok.AllArgsConstructor;
@@ -10,6 +10,8 @@ import lombok.Setter;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-public class UpdateStatusRequest {
-    private String status;
+public class ForgorPasswordRequest {
+    String email;
+    String otp;
+    String newPassword;
 }

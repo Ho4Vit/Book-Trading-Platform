@@ -30,6 +30,7 @@ public abstract class User {
     private Role role; // CUSTOMER, SELLER, ADMIN
 
     private Boolean isActive;
+    private Boolean isOauth2;
 
     private LocalDateTime createdAt;
     private LocalDateTime lastLoginAt;

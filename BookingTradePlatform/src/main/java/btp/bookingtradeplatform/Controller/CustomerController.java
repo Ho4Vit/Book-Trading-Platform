@@ -2,7 +2,6 @@ package btp.bookingtradeplatform.Controller;
 
 import btp.bookingtradeplatform.Model.DTO.CustomerDTO;
 import btp.bookingtradeplatform.Model.Request.EmailRequest;
-import btp.bookingtradeplatform.Model.Request.RegisterSellerRequest;
 import btp.bookingtradeplatform.Model.Request.RegiterCustomerRequest;
 import btp.bookingtradeplatform.Model.Response.ResponseData;
 import btp.bookingtradeplatform.Model.UpdateRequest.UpdateCustomerForm;

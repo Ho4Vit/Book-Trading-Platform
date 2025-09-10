@@ -1,14 +1,12 @@
-import React from 'react';
-import './Footer.css';
+import React from "react";
+import "./Footer.css";
 
-const Footer = () => {
+function Footer() {
     return (
         <footer className="footer">
-            <div className="container">
-                <p>© 2025 BookStore. All rights reserved.</p>
-            </div>
+            <p>© 2025 BookStore. All rights reserved.</p>
         </footer>
     );
-};
+}
 
 export default Footer;

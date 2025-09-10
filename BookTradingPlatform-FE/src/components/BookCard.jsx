@@ -1,18 +1,16 @@
-import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import React from "react";
+import { Link } from "react-router-dom";
+import "./BookCard.css";
 
-const BookCard = ({ book }) => {
-    const navigate = useNavigate();
-
+function BookCard({ book }) {
     return (
-        <div style={{ border: '1px solid #ddd', padding: '1rem', margin: '1rem' }}>
-            <img src={book.coverImage} alt={book.title} style={{ width: '150px', height: '200px' }} />
+        <Link to={`/books/${book.id}`} className="book-card">
+            <img src={book.coverImage} alt={book.title} />
             <h3>{book.title}</h3>
-            <p>Tác giả: {book.author}</p>
-            <p>Giá: {book.price.toLocaleString()}đ</p>
-            <button onClick={() => navigate(`/book/${book.id}`)}>Xem chi tiết</button>
-        </div>
+            <p>{book.author}</p>
+            <p className="price">{book.price.toLocaleString()} đ</p>
+        </Link>
     );
-};
+}
 
 export default BookCard;

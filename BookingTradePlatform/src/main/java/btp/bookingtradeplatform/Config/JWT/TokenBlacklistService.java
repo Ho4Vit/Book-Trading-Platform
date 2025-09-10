@@ -1,24 +1,27 @@
 package btp.bookingtradeplatform.Config.JWT;
 
-
+import lombok.RequiredArgsConstructor;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 
 @Service
+@RequiredArgsConstructor
 public class TokenBlacklistService {
-    private Set<String> blacklist = new HashSet<>();
 
-    public void blacklistToken(String token) {
-        blacklist.add(token);
+    private final RedisTemplate<String, String> redisTemplate;
+    private static final String BLACKLIST_PREFIX = "blacklist:";
+    public void blacklistToken(String token, long ttlMillis) {
+        redisTemplate.opsForValue().set(
+                BLACKLIST_PREFIX + token,
+                "true",
+                ttlMillis,
+                TimeUnit.MILLISECONDS
+        );
     }
 
     public boolean isTokenBlacklisted(String token) {
-        return blacklist.contains(token);
+        return redisTemplate.hasKey(BLACKLIST_PREFIX + token);
     }
 }
-
-

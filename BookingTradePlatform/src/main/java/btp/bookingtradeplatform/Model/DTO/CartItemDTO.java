@@ -6,18 +6,28 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.math.BigDecimal;
+
 @Getter
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
 public class CartItemDTO {
-    private BookDTO book;
+    private Long bookId;
+    private String ImgUrl;
+    private String SellerName;
+    private String bookName;
     private int quantity;
+    private BigDecimal price;
 
     public static CartItemDTO fromEntity(CartItem item) {
         CartItemDTO dto = new CartItemDTO();
-        dto.setBook(BookDTO.fromEntity(item.getBook()));
+        dto.setBookId(item.getBook().getId());
+        dto.setImgUrl(item.getBook().getCoverImage());
+        dto.setSellerName(item.getBook().getSeller().getFullName());
+        dto.setBookName(item.getBook().getTitle());
         dto.setQuantity(item.getQuantity());
+        dto.setPrice(item.getBook().getPrice());
         return dto;
     }
 }

@@ -1,9 +1,18 @@
-/* src/pages/BookDetail.css */
-.book-detail {
-    padding: 40px;
-    max-width: 600px;
-    margin: 0 auto;
-    text-align: left;
-    background-color: #f9f9f9;
-    border-radius: 10px;
+.actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 15px;
+}
+
+.btn-add {
+    background: #007bff;
+    color: white;
+    padding: 8px 14px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.btn-add:hover {
+    background: #0056b3;
 }
