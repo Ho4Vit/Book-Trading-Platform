@@ -20,7 +20,7 @@ function Home() {
             {/* Banner */}
             <div className="banner">
                 <img
-                    src="https://via.placeholder.com/1200x300?text=Book+Store+Banner"
+                    src="https://cdn1.fahasa.com/media/magentothem/banner7/CTT9_Resize_1509_840x320.png"
                     alt="Banner"
                 />
             </div>

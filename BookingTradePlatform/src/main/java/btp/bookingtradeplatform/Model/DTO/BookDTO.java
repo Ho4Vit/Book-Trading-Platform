@@ -30,6 +30,7 @@ public class BookDTO {
     private BookFormat format;
     private List<String> categoryNames;
     private boolean isActive;
+    private int soldCount;
 
     public static BookDTO fromEntity(Book book) {
         return BookDTO.builder()
@@ -48,6 +49,7 @@ public class BookDTO {
                 .format(book.getFormat())
                 .categoryNames(book.getCategories().stream().map(Category::getName).collect(Collectors.toList()))
                 .isActive(book.isActive())
+                .soldCount(book.getSoldCount())
                 .build();
     }
 }

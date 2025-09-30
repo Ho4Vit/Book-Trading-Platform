@@ -9,6 +9,8 @@ import Profile from "./pages/Profile.jsx";
 import Checkout from "./pages/Checkout.jsx";
 import SellerBookPage from "./pages/SellerBookPage.jsx";
 import AdminPage from "./pages/AdminPage.jsx"; // trang quản lý sách của seller
+import '@fortawesome/fontawesome-free/css/all.min.css';
+
 
 function App() {
     return (

@@ -9,13 +9,18 @@ function BookDetail() {
     const { id } = useParams();
     const navigate = useNavigate();
     const [book, setBook] = useState(null);
+    const [mainImage, setMainImage] = useState("");
     const { auth } = useContext(AuthContext);
     const { fetchCart } = useContext(CartContext);
 
     useEffect(() => {
-        axios.get(`http://localhost:8080/api/v1/books/${id}`)
-            .then(res => setBook(res.data.data))
-            .catch(err => console.error(err));
+        axios
+            .get(`http://localhost:8080/api/v1/books/${id}`)
+            .then((res) => {
+                setBook(res.data.data);
+                setMainImage(res.data.data.coverImage);
+            })
+            .catch((err) => console.error(err));
     }, [id]);
 
     const handleAddToCart = async () => {
@@ -43,7 +48,7 @@ function BookDetail() {
         try {
             const res = await axios.post("http://localhost:8080/api/orders/create", {
                 customerId: auth.userId,
-                items: [{ bookId: book.id, quantity: 1 }]
+                items: [{ bookId: book.id, quantity: 1 }],
             });
             const orderId = res.data.data.id;
             navigate(`/checkout/${orderId}`);
@@ -56,25 +61,54 @@ function BookDetail() {
     if (!book) return <p>Loading...</p>;
 
     return (
-        <div className="book-detail">
-            <div className="images">
-                <img className="main-img" src={book.coverImage} alt={book.title} />
-                <div className="additional">
-                    {book.additionalImages?.map((img, idx) => (
-                        <img key={idx} src={img} alt={`extra-${idx}`} />
-                    ))}
+        <div className="book-detail-container">
+            {/* Cột trái - ảnh */}
+            <div className="book-detail-left">
+                <div className="main-image">
+                    <img src={mainImage} alt={book.title} />
+                </div>
+                <div className="thumbnail-list">
+                    {[book.coverImage, ...(book.additionalImages || [])].map(
+                        (img, idx) => (
+                            <img
+                                key={idx}
+                                src={img}
+                                alt={`thumb-${idx}`}
+                                onClick={() => setMainImage(img)}
+                                className={mainImage === img ? "active" : ""}
+                            />
+                        )
+                    )}
                 </div>
             </div>
-            <div className="info">
-                <h2>{book.title}</h2>
-                <p><b>Tác giả:</b> {book.author}</p>
-                <p><b>Ngôn ngữ:</b> {book.language}</p>
-                <p><b>Số trang:</b> {book.pageCount}</p>
-                <p className="price">{book.price.toLocaleString()} đ</p>
-                <div className="actions">
-                    <button className="btn-buy" onClick={handleBuyNow}>Mua ngay</button>
-                    <button className="btn-add" onClick={handleAddToCart}>Thêm vào giỏ hàng</button>
+
+            {/* Cột phải - thông tin */}
+            <div className="book-detail-right">
+                <h2 className="book-title">{book.title}</h2>
+                <p className="book-sold">Đã bán {book.soldCount}</p>
+
+                <div className="book-info-box">
+                    <p><strong>Tác giả:</strong> {book.author}</p>
+                    <p><strong>Ngôn ngữ:</strong> {book.language}</p>
+                    <p><strong>Số trang:</strong> {book.pageCount}</p>
+                    <p><strong>Loại bìa:</strong> {book.format}</p>
                 </div>
+
+
+                <div className="category-tags">
+                    {book.categoryNames.map((cat, idx) => (
+                        <span key={idx} className="tag">{cat}</span>
+                    ))}
+                </div>
+                <div className="price-box">
+                    <span className="book-price">{book.price.toLocaleString()} đ</span>
+                </div>
+                <div className="action-buttons">
+                    <button className="buy-now" onClick={handleBuyNow}>Mua ngay</button>
+                    <button className="add-to-cart" onClick={handleAddToCart}>Thêm vào giỏ hàng</button>
+                </div>
+
+
             </div>
         </div>
     );

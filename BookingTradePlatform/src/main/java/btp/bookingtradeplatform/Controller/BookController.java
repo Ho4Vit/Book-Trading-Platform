@@ -70,4 +70,9 @@ public class BookController {
                         null
                 ));
     }
+
+    @GetMapping("/search")
+    public ResponseEntity<ResponseData<List<BookDTO>>> searchBooks(@RequestParam("q") String keyword) {
+        return bookService.searchBooks(keyword);
+    }
 }

@@ -55,5 +55,6 @@ public class Book {
     private List<Category> categories = new ArrayList<>();
 
     private boolean isActive = true;
+    private int soldCount = 0;
 }
 

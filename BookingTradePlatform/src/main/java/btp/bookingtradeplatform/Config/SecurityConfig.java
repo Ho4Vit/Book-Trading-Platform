@@ -29,6 +29,11 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable()) // Tắt CSRF cho API
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/**").permitAll()
+                        .requestMatchers(
+                                "/v3/api-docs/**",
+                                "/swagger-ui/**",
+                                "/swagger-ui.html"
+                        ).permitAll()
                         .anyRequest().permitAll()
                 )
                 .oauth2Login(oauth -> oauth

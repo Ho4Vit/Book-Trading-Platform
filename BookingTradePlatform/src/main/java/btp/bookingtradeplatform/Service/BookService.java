@@ -128,4 +128,17 @@ public class BookService {
 
         return ResponseEntity.ok("Deleted successfully.");
     }
+
+    public ResponseEntity<ResponseData<List<BookDTO>>> searchBooks(String keyword) {
+        List<Book> search = bookRepository.searchByKeyword(keyword);
+        List<BookDTO> bookDTOs = search.stream().map(BookDTO::fromEntity).toList();
+
+        return ResponseEntity
+                .status(AppException.SUCCESS.getHttpStatus())
+                .body(new ResponseData<>(
+                        AppException.SUCCESS.getCode(),
+                        AppException.SUCCESS.getMessage(),
+                        bookDTOs
+                ));
+    }
 }

@@ -1,5 +1,6 @@
 package btp.bookingtradeplatform.Controller;
 
+import btp.bookingtradeplatform.Model.DTO.SeriesDTO;
 import btp.bookingtradeplatform.Model.Entity.Series;
 import btp.bookingtradeplatform.Model.Request.CreateSeriesRequest;
 import btp.bookingtradeplatform.Model.Response.ResponseData;
@@ -19,24 +20,22 @@ public class SeriesController {
     private SeriesService seriesService;
 
     @GetMapping("/getall")
-    public ResponseEntity<ResponseData<List<Series>>> getAllSeries() {
+    public ResponseEntity<ResponseData<List<SeriesDTO>>> getAllSeries() {
         return seriesService.getAllSeries();
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<ResponseData<Series>> getSeriesById(@PathVariable Long id) {
+    public ResponseEntity<ResponseData<SeriesDTO>> getSeriesById(@PathVariable Long id) {
         return seriesService.getSeriesById(id);
     }
 
     @PostMapping("/create")
-    public ResponseEntity<ResponseData<Series>> createSeries(@RequestBody CreateSeriesRequest request) {
+    public ResponseEntity<ResponseData<SeriesDTO>> createSeries(@RequestBody CreateSeriesRequest request) {
         return seriesService.createSeries(request);
     }
 
-    @PutMapping("/{id}")
-    public ResponseEntity<ResponseData<Series>> updateSeries(
-            @PathVariable Long id,
-            @RequestBody UpdateSeriesForm request) {
+    @PutMapping("/update/{id}")
+    public ResponseEntity<ResponseData<SeriesDTO>> updateSeries(@PathVariable Long id, @RequestBody UpdateSeriesForm request) {
         return seriesService.updateSeries(id, request);
     }
 }

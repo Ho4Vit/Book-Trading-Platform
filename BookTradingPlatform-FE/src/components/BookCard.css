@@ -1,19 +1,272 @@
+/* BookCard.css - Thiết kế hiện đại */
 .book-card {
-    border: 1px solid #ddd;
-    border-radius: 8px;
-    padding: 10px;
-    text-align: center;
-    background: #fff;
+    display: flex;
+    flex-direction: column;
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    overflow: hidden;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    text-decoration: none;
+    color: inherit;
+    position: relative;
+    border: 1px solid rgba(0, 0, 0, 0.04);
+    backdrop-filter: blur(10px);
+    height: 100%;
+    max-width: 280px;
+    margin: 0 auto;
 }
 
+.book-card:hover {
+    transform: translateY(-8px) scale(1.02);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+    border-color: rgba(102, 126, 234, 0.2);
+}
+
+.book-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #667eea, #764ba2, #ff6b6b);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.3s ease;
+}
+
+.book-card:hover::before {
+    transform: scaleX(1);
+}
+
+/* Book Cover Image */
 .book-card img {
     width: 100%;
-    height: 200px;
+    height: 300px;
     object-fit: cover;
-    border-radius: 6px;
+    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    transition: transform 0.3s ease;
+    position: relative;
 }
 
+.book-card:hover img {
+    transform: scale(1.05);
+}
+
+/* Book Content */
+.book-card h3 {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #2d3748;
+    margin: 1rem 1rem 0.5rem;
+    line-height: 1.4;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-height: 2.8rem;
+}
+
+.book-card p {
+    margin: 0 1rem;
+    font-size: 0.9rem;
+    line-height: 1.5;
+}
+
+/* Author */
+.book-card p:not(.price) {
+    color: #718096;
+    font-weight: 500;
+    margin-bottom: 0.75rem;
+    display: -webkit-box;
+    -webkit-line-clamp: 1;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Price */
 .book-card .price {
-    font-weight: bold;
-    color: #e63946;
+    font-size: 1.25rem;
+    font-weight: 800;
+    color: #e53e3e;
+    margin: auto 1rem 1rem;
+    background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    text-shadow: none;
+    position: relative;
+}
+
+.book-card .price::before {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, #ff6b6b, #ee5a24);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.3s ease;
+}
+
+.book-card:hover .price::before {
+    transform: scaleX(1);
+}
+
+/* Loading state cho image */
+.book-card img[src=""],
+.book-card img:not([src]) {
+    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    position: relative;
+}
+
+.book-card img[src=""]::before,
+.book-card img:not([src])::before {
+    content: '📚';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 3rem;
+    opacity: 0.5;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .book-card {
+        max-width: 100%;
+        margin: 0;
+    }
+
+    .book-card img {
+        height: 250px;
+    }
+
+    .book-card h3 {
+        font-size: 1rem;
+        margin: 0.75rem 0.75rem 0.5rem;
+    }
+
+    .book-card p {
+        margin: 0 0.75rem;
+        font-size: 0.85rem;
+    }
+
+    .book-card .price {
+        font-size: 1.1rem;
+        margin: auto 0.75rem 0.75rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .book-card img {
+        height: 200px;
+    }
+
+    .book-card h3 {
+        font-size: 0.95rem;
+        -webkit-line-clamp: 2;
+        min-height: 2.4rem;
+    }
+
+    .book-card .price {
+        font-size: 1rem;
+    }
+}
+
+/* Grid layout cho danh sách books */
+.books-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 2rem;
+    padding: 2rem;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+@media (max-width: 768px) {
+    .books-grid {
+        grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+        gap: 1.5rem;
+        padding: 1rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .books-grid {
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+        gap: 1rem;
+        padding: 0.5rem;
+    }
+}
+
+/* Animation khi load */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.book-card {
+    animation: fadeInUp 0.6s ease-out;
+}
+
+/* Stagger animation cho nhiều cards */
+.book-card:nth-child(1) { animation-delay: 0.1s; }
+.book-card:nth-child(2) { animation-delay: 0.2s; }
+.book-card:nth-child(3) { animation-delay: 0.3s; }
+.book-card:nth-child(4) { animation-delay: 0.4s; }
+.book-card:nth-child(5) { animation-delay: 0.5s; }
+.book-card:nth-child(6) { animation-delay: 0.6s; }
+
+/* Focus state cho accessibility */
+.book-card:focus {
+    outline: 3px solid rgba(102, 126, 234, 0.5);
+    outline-offset: 2px;
+    transform: translateY(-4px);
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+    .book-card {
+        background: #2d3748;
+        border-color: rgba(255, 255, 255, 0.1);
+        color: white;
+    }
+
+    .book-card h3 {
+        color: #f7fafc;
+    }
+
+    .book-card p:not(.price) {
+        color: #cbd5e0;
+    }
+
+    .book-card:hover {
+        border-color: rgba(102, 126, 234, 0.3);
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+    }
+}
+
+/* Print styles */
+@media print {
+    .book-card {
+        break-inside: avoid;
+        box-shadow: none;
+        border: 1px solid #ccc;
+    }
+
+    .book-card:hover {
+        transform: none;
+    }
 }
