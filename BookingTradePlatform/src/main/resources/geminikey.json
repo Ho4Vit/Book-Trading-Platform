@@ -1,0 +1,13 @@
+{
+  "type": "service_account",
+  "project_id": "cogent-genre-442104-c1",
+  "private_key_id": "7a909a72e794d125307b6a73f9460b2026797563",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvwIBADANBgkqhkiG9w0BAQEFAASCBKkwggSlAgEAAoIBAQDZtdfeoeWMOjeo\naDSWr1D0lbz69WkMd2+Oj2PsCkRYTHxQppRzHO4MZQtPyELc5njhHHpvJVg6lVpY\nwPPcir52iJYn7GTZzM5BfxTJ45Wn/RClVNHRkT2bJboQP58E2uP9VwJW6LWESq+Q\nPwjxaA8BCBfdT2oEn5kBHBBdsavbmf2UkWD552LSJAYBEdRilApqoyY6wGTtNVoI\nMGtZXONS0VNd1tDiGSBk5t5anpJ+hvZlXbe2ki7qOk31Khi8y/ee2yyzoo67GVjx\nEC1UDBeUFC298t5EOmNl2vh6u/Kt1ksAsAoECsJvbogujohBOBpgEcQ3RgcczVWu\n14raHWQBAgMBAAECggEACCaAIeQSuWi2i7X2/gsrLzTp4cVNPPu9r+sbVQtfWqTm\nZIiP9y1Gli00OrTnF+kC7n6H8OBHiM3tl3QFzSRelAZyBKWbcvHxaM9Oom5EPIlD\nVcUyo7NZyJSlfhU7qU1eiq32tvU4Um8PWomZlpwML8AzUIQ4Fls5Oaroy/EqW2q7\nOSyCjhMzGzdiIOOvaOpPkf7NhNSFR79UYYQlXCSZfsR98VNm4sWv9vMvLhOlHpaC\nM2H3WZprePb92D80dZXSUBDz7Cx/k1QX209piIPiyfvyG1gzwNWMCWpRkeVYX55C\niy4uS2XP8tEmOpqNS0g1ZWaSg/zFl7SaVAC3x69KVwKBgQD5TydYS10sXv0rH3Tc\ngfur2k734fRW5dbIW6yHurYf3p8cSdzojgvDD8Wy6iNSWGXLSzpAaQSyGm8F92Nx\n5Z/tt85t3IQ+GWEe+x8LubgezoFiRH/c/Cv/DdYKbogW8EzMgxbbP7fqrF5msmhZ\nlCIZqYVmpp3WwBLyyFGfuFpRvwKBgQDfjZf43YTR+nuYi1fCVw0TdWwS1tYqEYf6\nmsZDRSGcPFKyAqv+vlDL0KdJQOua5q1R7Z6rDHfUNYewM+x0Jx6xlv4jkW1TulOS\nCMyuNaXLmxUOA3W1KT6PBesODtHoDnB809AEMAtVUpLQEqGgyj+4chqkkA2ZikCd\n/5y9ViI6PwKBgQDbZccQMrJ6O9W8P2CONW2PXP0ltBlc58NOay63+54PCdEoCfB4\nT5kWPikTPG19KAHdGATZbhIN0qllrMI9F4DYqGrnz6opJBiONRyrKvNXWRAPtIx5\nowns2PZGE+N7nFlZmPtiUv69bJde9R5TxsMDpmWZYoOA22NReOwsDQae7QKBgQDK\nN3iqwyZsElpOyGzf/IJ1gZf7Cp67exQ3ml2RaC1Y+DANmeEfE+ReGSXZW4JDojpR\ni9IlA6g5KxrMRouzHdfj6KOGZPwx6q/Bv3f2dcy9elD3ViXZc6+FDGNtWfaCJN2X\n7LmTsCnwSjtHQDM4EPrGy2BST4QdyTNeOGP92LYpXQKBgQCuz54c8LA1R4WJvjRa\nmIyT4ENbt4vvrNgMefNOankWlUMIXAX5RHDLZm8knEKWQ+F8BK+WYEL3q8TiAYv5\nsuJqogB7AWAPiBfRdLjNLNho0c4jdRKk7zRAFJ13qtk4LAMZ0EJU8/3kjvtHFlQ0\neaSiTqq+PVdSpX90sQJRQdtcMg==\n-----END PRIVATE KEY-----\n",
+  "client_email": "btp-chatbot@cogent-genre-442104-c1.iam.gserviceaccount.com",
+  "client_id": "104444434753594314439",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/btp-chatbot%40cogent-genre-442104-c1.iam.gserviceaccount.com",
+  "universe_domain": "googleapis.com"
+}

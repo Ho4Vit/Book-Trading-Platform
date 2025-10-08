@@ -9,13 +9,14 @@ import btp.bookingtradeplatform.Model.UpdateRequest.UpdateSeriesForm;
 import btp.bookingtradeplatform.Repository.SerieRepository;
 import btp.bookingtradeplatform.Model.DTO.SeriesDTO;
 import btp.bookingtradeplatform.Model.DTO.BookDTO;
+import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.stream.Collectors;
-
+@Transactional
 @Service
 public class SeriesService {
 

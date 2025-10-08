@@ -32,7 +32,7 @@ public class BookController {
         return bookService.getAllBooks();
     }
 
-    @GetMapping("/{id}")
+    @GetMapping("/get/{id}")
     public ResponseEntity<ResponseData<BookDTO>> getBookById(@PathVariable Long id) {
         return bookService.getBookById(id);
     }
@@ -43,14 +43,14 @@ public class BookController {
         return bookService.createBook(request);
     }
 
-    @PutMapping("/{id}")
+    @PutMapping("/update/{id}")
     public ResponseEntity<ResponseData<BookDTO>> updateBook(
             @PathVariable Long id,
             @RequestBody UpdateBookForm request) {
         return bookService.updateBook(id, request);
     }
 
-    @DeleteMapping("/{id}")
+    @DeleteMapping("/delete/{id}")
     public ResponseEntity<?> deleteBook(@PathVariable Long id) {
         return bookService.deleteBook(id);
     }

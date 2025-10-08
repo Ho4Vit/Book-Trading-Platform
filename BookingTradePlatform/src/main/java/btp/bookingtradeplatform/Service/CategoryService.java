@@ -8,13 +8,13 @@ import btp.bookingtradeplatform.Model.Request.CreateCategoryRequest;
 import btp.bookingtradeplatform.Model.UpdateRequest.UpdateCategoryForm;
 import btp.bookingtradeplatform.Model.Response.ResponseData;
 import btp.bookingtradeplatform.Repository.CategoryRepository;
-import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-
+@Transactional
 @Service
 public class CategoryService {
 
