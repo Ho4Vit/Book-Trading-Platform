@@ -2,7 +2,7 @@ import api from "@/api/anxiosClient.js";
 
 export const loginUser = async (data) => {
     try {
-        const res = await api.post("/api/auth/login", data);
+        const res = await api.post("/auth/login", data);
         return res.data;
     } catch (error) {
         console.error("Login error:", error);
@@ -12,7 +12,7 @@ export const loginUser = async (data) => {
 
 export const logoutUser = async () => {
     try {
-        const res = await api.post("/api/auth/logout");
+        const res = await api.post("/auth/logout");
         localStorage.clear();
         return res.data;
     } catch (error) {
