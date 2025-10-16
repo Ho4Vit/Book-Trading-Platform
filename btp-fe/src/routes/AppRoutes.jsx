@@ -1,18 +1,77 @@
-// src/routes/AppRoutes.jsx
-import React from "react";
+import React, { lazy, Suspense } from "react";
 import { Routes, Route } from "react-router-dom";
-import HomePage from "../pages/HomePage.jsx";
-import LoginPage from "../pages/LoginPage.jsx";
-import BookDetailPage from "../pages/customer/BookDetailPage.jsx";
+import ProtectedRoute from "./ProtectedRoute";
 
-const AppRoutes = () => {
+// Lazy load pages
+const HomePage = lazy(() => import("../pages/HomePage"));
+const BookDetailPage = lazy(() => import("../pages/customer/BookDetailPage"));
+const NotFoundPage = lazy(() => import("../pages/NotFoundPage"));
+
+// Layouts
+const AdminLayout = lazy(() => import("../layouts/AdminLayout"));
+const SellerLayout = lazy(() => import("../layouts/SellerLayout"));
+const CustomerLayout = lazy(() => import("../layouts/CustomerLayout"));
+
+// Pages inside layouts
+const AdminDashboard = lazy(() => import("../pages/admin/AdminDashboard"));
+const ManageBooks = lazy(() => import("../pages/admin/ManageBooks"));
+const ManageUsers = lazy(() => import("../pages/admin/ManageUsers"));
+
+const SellerDashboard = lazy(() => import("../pages/seller/SellerDashboard"));
+const SellerBooks = lazy(() => import("../pages/seller/SellerBooks"));
+const SellerOrders = lazy(() => import("../pages/seller/SellerOrders"));
+
+const CustomerDashboard = lazy(() => import("../pages/customer/CustomerDashboard"));
+const CustomerProfile = lazy(() => import("../pages/customer/CustomerProfile"));
+const CustomerOrders = lazy(() => import("../pages/customer/CustomerOrders"));
+
+export default function AppRoutes() {
     return (
-        <Routes>
-            <Route path="/" element={<HomePage />} />
-            <Route path="/login" element={<LoginPage />} />
-            <Route path="/books/:id" element={<BookDetailPage />} />
-        </Routes>
-    );
-};
+        <Suspense
+            fallback={
+                <div className="flex justify-center items-center h-screen text-gray-500">
+                    Đang tải...
+                </div>
+            }
+        >
+            <Routes>
+                {/* Public Routes */}
+                <Route path="/" element={<HomePage />} />
+                <Route path="/books/:id" element={<BookDetailPage />} />
 
-export default AppRoutes;
+                {/* Customer Routes */}
+                <Route
+                    path="/customer"
+                    element={<ProtectedRoute element={<CustomerLayout />} allowedRoles={["CUSTOMER"]} />}
+                >
+                    <Route index element={<CustomerDashboard />} />
+                    <Route path="profile" element={<CustomerProfile />} />
+                    <Route path="orders" element={<CustomerOrders />} />
+                </Route>
+
+                {/* Seller Routes */}
+                <Route
+                    path="/seller"
+                    element={<ProtectedRoute element={<SellerLayout />} allowedRoles={["SELLER"]} />}
+                >
+                    <Route index element={<SellerDashboard />} />
+                    <Route path="books" element={<SellerBooks />} />
+                    <Route path="orders" element={<SellerOrders />} />
+                </Route>
+
+                {/* Admin Routes */}
+                <Route
+                    path="/admin"
+                    element={<ProtectedRoute element={<AdminLayout />} allowedRoles={["ADMIN"]} />}
+                >
+                    <Route index element={<AdminDashboard />} />
+                    <Route path="books" element={<ManageBooks />} />
+                    <Route path="users" element={<ManageUsers />} />
+                </Route>
+
+                {/* 404 Not Found */}
+                <Route path="*" element={<NotFoundPage />} />
+            </Routes>
+        </Suspense>
+    );
+}
