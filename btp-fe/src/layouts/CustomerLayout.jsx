@@ -1,35 +1,23 @@
 import React from "react";
-import { Link, Outlet, useNavigate } from "react-router-dom";
-import { toast } from "react-hot-toast";
+import { Outlet } from "react-router-dom";
+import Header from "@/components/Header";
+import Footer from "@/components/Footer";
 
 export default function CustomerLayout() {
-    const navigate = useNavigate();
+	return (
+		<div className="flex flex-col min-h-screen bg-background">
+			{/* Header */}
+			<Header />
 
-    const handleLogout = () => {
-        localStorage.clear();
-        toast.success("Đã đăng xuất!");
-        navigate("/login");
-    };
+			{/* Main Content */}
+			<main className="flex-1 w-full">
+				<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+					<Outlet />
+				</div>
+			</main>
 
-    return (
-        <div className="min-h-screen flex flex-col">
-            <header className="bg-white shadow p-4 flex justify-between items-center">
-                <Link to="/" className="font-bold text-lg text-blue-600">
-                    📚 BookStore
-                </Link>
-                <nav className="space-x-4">
-                    <Link to="/customer">Dashboard</Link>
-                    <Link to="/customer/profile">Hồ sơ</Link>
-                    <Link to="/customer/orders">Đơn hàng</Link>
-                    <button onClick={handleLogout} className="text-red-500 font-medium ml-4">
-                        Đăng xuất
-                    </button>
-                </nav>
-            </header>
-
-            <main className="flex-1 p-6 bg-gray-50">
-                <Outlet />
-            </main>
-        </div>
-    );
+			{/* Footer */}
+			<Footer />
+		</div>
+	);
 }

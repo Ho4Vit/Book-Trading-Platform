@@ -59,7 +59,10 @@ export const apiClient = {
                 headers: { ...headers, ...config.headers },
             });
 
-            toast.success("Thao tác thành công!");
+            // Only show toast if not explicitly disabled
+            if (config.skipSuccessToast !== true) {
+                toast.success("Thao tác thành công!");
+            }
             return response.data;
         } catch (error) {
             handleError(error);
@@ -72,7 +75,10 @@ export const apiClient = {
     async put(url, data, config = {}) {
         try {
             const response = await axiosInstance.put(url, data, config);
-            toast.success("Cập nhật thành công!");
+            // Only show toast if not explicitly disabled
+            if (config.skipSuccessToast !== true) {
+                toast.success("Cập nhật thành công!");
+            }
             return response.data;
         } catch (error) {
             handleError(error);

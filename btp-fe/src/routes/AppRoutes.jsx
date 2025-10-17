@@ -6,6 +6,8 @@ import ProtectedRoute from "./ProtectedRoute";
 const HomePage = lazy(() => import("../pages/HomePage"));
 const BookDetailPage = lazy(() => import("../pages/customer/BookDetailPage"));
 const NotFoundPage = lazy(() => import("../pages/NotFoundPage"));
+const RegisterSeller = lazy(() => import("../pages/RegisterSeller"));
+const RegisterCustomer = lazy(() => import("../pages/RegisterCustomer"));
 
 // Layouts
 const AdminLayout = lazy(() => import("../layouts/AdminLayout"));
@@ -38,6 +40,8 @@ export default function AppRoutes() {
                 {/* Public Routes */}
                 <Route path="/" element={<HomePage />} />
                 <Route path="/books/:id" element={<BookDetailPage />} />
+                <Route path="/register-seller" element={<RegisterSeller />} />
+                <Route path="/register-customer" element={<RegisterCustomer />} />
 
                 {/* Customer Routes */}
                 <Route

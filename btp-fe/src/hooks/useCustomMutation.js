@@ -24,22 +24,26 @@ export default function useCustomMutation(apiFnOrUrl, method, options = {}) {
                     ? await axiosInstance({ url: apiFnOrUrl, method, data })
                     : await apiFnOrUrl(data); // nếu truyền function
 
-            return response.data || response;
+            // Return the response directly (apiClient already returns response.data)
+            return response;
         } catch (err) {
             const status = err?.response?.status;
             const message = err?.response?.data?.message || "Lỗi không xác định";
             if (status === 401) {
                 logout();
                 toast.error("Phiên đăng nhập đã hết hạn!");
-            } else toast.error(message);
-            throw new Error(message);
+            } else {
+                toast.error(message);
+            }
+            throw err; // Throw the original error instead of creating a new one
         }
     };
 
     return useMutation({
         mutationFn,
         onSuccess: (data) => {
-            toast.success("Thao tác thành công!");
+            // Don't show toast here if apiClient already showed it
+            // toast.success("Thao tác thành công!");
             if (options.invalidateKeys)
                 options.invalidateKeys.forEach((key) =>
                     queryClient.invalidateQueries([key])

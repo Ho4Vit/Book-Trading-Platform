@@ -137,6 +137,9 @@ src/
 ## 🧱 UI Components Convention
 
 ### General
+- Use the shadcn UI component library as a base.
+- All text content in Vietnamese.
+- Web will use Vietnam dong (đ) for currency.
 - TailwindCSS for all styling (no inline CSS).
 - Use utility classes with consistent spacing & color scale.
 - Keep responsive behavior (e.g. `sm:`, `md:`, `lg:`).
