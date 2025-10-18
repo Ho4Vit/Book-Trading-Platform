@@ -1,23 +1,29 @@
 package btp.bookingtradeplatform.Model.DTO;
 
+import btp.bookingtradeplatform.Model.Entity.Series;
+import lombok.*;
 import java.util.List;
-
-import lombok.Data;
+import java.util.stream.Collectors;
 
 @Data
+@AllArgsConstructor
+@NoArgsConstructor
 public class SeriesDTO {
     private Long id;
     private String name;
     private String description;
     private List<BookDTO> books;
 
-    // Constructors
-    public SeriesDTO() {}
-
-    public SeriesDTO(Long id, String name, String description, List<BookDTO> books) {
-        this.id = id;
-        this.name = name;
-        this.description = description;
-        this.books = books;
+    public static SeriesDTO fromEntity(Series series) {
+        return new SeriesDTO(
+                series.getId(),
+                series.getName(),
+                series.getDescription(),
+                series.getBooks() != null
+                        ? series.getBooks().stream()
+                        .map(BookDTO::fromEntity)
+                        .collect(Collectors.toList())
+                        : null
+        );
     }
 }

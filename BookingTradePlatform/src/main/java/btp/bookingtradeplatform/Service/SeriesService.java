@@ -2,13 +2,14 @@ package btp.bookingtradeplatform.Service;
 
 import btp.bookingtradeplatform.Exception.AppException;
 import btp.bookingtradeplatform.Exception.BusinessException;
+import btp.bookingtradeplatform.Model.Entity.Book;
 import btp.bookingtradeplatform.Model.Entity.Series;
 import btp.bookingtradeplatform.Model.Request.CreateSeriesRequest;
 import btp.bookingtradeplatform.Model.Response.ResponseData;
 import btp.bookingtradeplatform.Model.UpdateRequest.UpdateSeriesForm;
+import btp.bookingtradeplatform.Repository.BookRepository;
 import btp.bookingtradeplatform.Repository.SerieRepository;
 import btp.bookingtradeplatform.Model.DTO.SeriesDTO;
-import btp.bookingtradeplatform.Model.DTO.BookDTO;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -23,16 +24,12 @@ public class SeriesService {
     @Autowired
     private SerieRepository seriesRepository;
 
+    @Autowired
+    private BookRepository bookRepository;
+
     public ResponseEntity<ResponseData<List<SeriesDTO>>> getAllSeries() {
         List<SeriesDTO> seriesDTOList = seriesRepository.findAll().stream()
-                .map(series -> new SeriesDTO(
-                        series.getId(),
-                        series.getName(),
-                        series.getDescription(),
-                        series.getBooks().stream()
-                                .map(BookDTO::fromEntity)
-                                .collect(Collectors.toList())
-                ))
+                .map(SeriesDTO::fromEntity)
                 .collect(Collectors.toList());
 
         return ResponseEntity
@@ -48,21 +45,12 @@ public class SeriesService {
         Series series = seriesRepository.findById(id)
                 .orElseThrow(() -> new BusinessException(AppException.NOT_FOUND));
 
-        SeriesDTO seriesDTO = new SeriesDTO(
-                series.getId(),
-                series.getName(),
-                series.getDescription(),
-                series.getBooks().stream()
-                        .map(BookDTO::fromEntity)
-                        .collect(Collectors.toList())
-        );
-
         return ResponseEntity
                 .status(AppException.SUCCESS.getHttpStatus())
                 .body(new ResponseData<>(
                         AppException.SUCCESS.getCode(),
                         AppException.SUCCESS.getMessage(),
-                        seriesDTO
+                        SeriesDTO.fromEntity(series)
                 ));
     }
 
@@ -70,27 +58,24 @@ public class SeriesService {
         if (seriesRepository.existsByName(request.getName())) {
             throw new BusinessException(AppException.ALREADY_EXISTS);
         }
-        Series requestEntity = new Series();
-        requestEntity.setName(request.getName());
-        requestEntity.setDescription(request.getDescription());
 
-        Series savedSeries = seriesRepository.save(requestEntity);
+        Series series = new Series();
+        series.setName(request.getName());
+        series.setDescription(request.getDescription());
 
-        SeriesDTO seriesDTO = new SeriesDTO(
-                savedSeries.getId(),
-                savedSeries.getName(),
-                savedSeries.getDescription(),
-                savedSeries.getBooks().stream()
-                        .map(BookDTO::fromEntity)
-                        .collect(Collectors.toList())
-        );
+        if (request.getBookIds() != null && !request.getBookIds().isEmpty()) {
+            List<Book> books = bookRepository.findAllById(request.getBookIds());
+            series.setBooks(books);
+        }
+
+        Series saved = seriesRepository.save(series);
 
         return ResponseEntity
                 .status(AppException.SUCCESS.getHttpStatus())
                 .body(new ResponseData<>(
                         AppException.SUCCESS.getCode(),
                         AppException.SUCCESS.getMessage(),
-                        seriesDTO
+                        SeriesDTO.fromEntity(saved)
                 ));
     }
 
@@ -101,24 +86,21 @@ public class SeriesService {
         if (request.getName() != null) existing.setName(request.getName());
         if (request.getDescription() != null) existing.setDescription(request.getDescription());
 
-        Series updated = seriesRepository.save(existing);
+        if (request.getBookIds() != null && !request.getBookIds().isEmpty()) {
+            List<Book> books = bookRepository.findAllById(request.getBookIds());
+            existing.setBooks(books);
+        }
 
-        SeriesDTO seriesDTO = new SeriesDTO(
-                updated.getId(),
-                updated.getName(),
-                updated.getDescription(),
-                updated.getBooks().stream()
-                        .map(BookDTO::fromEntity)
-                        .collect(Collectors.toList())
-        );
+        Series updated = seriesRepository.save(existing);
 
         return ResponseEntity
                 .status(AppException.SUCCESS.getHttpStatus())
                 .body(new ResponseData<>(
                         AppException.SUCCESS.getCode(),
                         AppException.SUCCESS.getMessage(),
-                        seriesDTO
+                        SeriesDTO.fromEntity(updated)
                 ));
     }
+
 
 }
