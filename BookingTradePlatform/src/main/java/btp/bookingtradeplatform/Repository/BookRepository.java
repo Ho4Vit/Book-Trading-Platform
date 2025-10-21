@@ -16,6 +16,7 @@ public interface BookRepository extends JpaRepository<Book, Long> {
                 "   OR LOWER(s.storeName) LIKE LOWER(CONCAT('%', :keyword, '%'))")
         List<Book> searchByKeyword(@Param("keyword") String keyword);
 
-        List<Book> findByTitleContainingIgnoreCaseOrDescriptionContainingIgnoreCase(String title, String description);
+
+        List<Book> findBySellerId(Long sellerId);
 }
 

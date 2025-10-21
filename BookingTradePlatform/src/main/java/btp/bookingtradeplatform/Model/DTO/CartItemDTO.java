@@ -16,6 +16,7 @@ public class CartItemDTO {
     private Long bookId;
     private String ImgUrl;
     private String SellerName;
+    private String StoreName;
     private String bookName;
     private int quantity;
     private BigDecimal price;
@@ -28,6 +29,7 @@ public class CartItemDTO {
         dto.setBookName(item.getBook().getTitle());
         dto.setQuantity(item.getQuantity());
         dto.setPrice(item.getBook().getPrice());
+        dto.setStoreName(item.getBook().getSeller().getStoreName());
         return dto;
     }
 }

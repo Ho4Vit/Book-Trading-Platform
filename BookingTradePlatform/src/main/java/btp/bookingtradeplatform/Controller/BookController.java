@@ -25,7 +25,7 @@ public class BookController {
     private BookService bookService;
 
     @Autowired
-    private  BookImageService bookImageService;
+    private BookImageService bookImageService;
 
     @GetMapping("/all")
     public ResponseEntity<ResponseData<List<BookDTO>>> getAllBooks() {
@@ -75,4 +75,10 @@ public class BookController {
     public ResponseEntity<ResponseData<List<BookDTO>>> searchBooks(@RequestParam("q") String keyword) {
         return bookService.searchBooks(keyword);
     }
+
+    @GetMapping("/seller/{sellerId}")
+    public ResponseEntity<ResponseData<List<BookDTO>>> getBooksBySeller(@PathVariable Long sellerId) {
+        return bookService.getBooksbySeller(sellerId);
+    }
+
 }

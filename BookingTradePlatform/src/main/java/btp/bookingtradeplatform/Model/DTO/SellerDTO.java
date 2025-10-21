@@ -12,6 +12,7 @@ public class SellerDTO {
     private Long id;
     private String email;
     private String fullName;
+    private String phoneNumber;
     private String profileImage;
     private String storeName;
     private String storeAddress;
@@ -26,6 +27,7 @@ public class SellerDTO {
                 .storeName(seller.getStoreName())
                 .storeAddress(seller.getStoreAddress())
                 .storeDescription(seller.getStoreDescription())
+                .phoneNumber(seller.getPhone())
                 .build();
     }
 }

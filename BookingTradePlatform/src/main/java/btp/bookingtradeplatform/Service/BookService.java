@@ -142,4 +142,17 @@ public class BookService {
                         bookDTOs
                 ));
     }
+
+    public ResponseEntity<ResponseData<List<BookDTO>>> getBooksbySeller(Long sellerId) {
+        List<Book> search = bookRepository.findBySellerId(sellerId);
+        List<BookDTO> bookDTOs = search.stream().map(BookDTO::fromEntity).toList();
+
+        return ResponseEntity
+                .status(AppException.SUCCESS.getHttpStatus())
+                .body(new ResponseData<>(
+                        AppException.SUCCESS.getCode(),
+                        AppException.SUCCESS.getMessage(),
+                        bookDTOs
+                ));
+    }
 }

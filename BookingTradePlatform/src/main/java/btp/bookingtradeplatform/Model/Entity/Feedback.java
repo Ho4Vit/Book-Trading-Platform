@@ -21,13 +21,11 @@ public class Feedback {
 
     private int rating;
 
-    private LocalDateTime createdAt;
+    private LocalDateTime createdAt = LocalDateTime.now();
 
-    @ManyToOne
-    @JoinColumn(name = "customer_id")
-    private Customer customer;
+    private Long CustomerId;
 
-    @ManyToOne
-    @JoinColumn(name = "book_id")
-    private Book book;
+    private Long bookId;
+
+    private boolean visible = true;
 }
