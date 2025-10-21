@@ -26,14 +26,11 @@ import {
     LogOut,
     Store,
     Package,
-    ChevronDown,
     Sparkles,
     Menu,
     Bell,
     Search,
-    ShoppingBag,
-    Heart,
-    Settings,
+    ShoppingCart,
 } from "lucide-react";
 
 const Header = () => {
@@ -59,6 +56,26 @@ const Header = () => {
         navigate("/");
     };
 
+    const handleSearchClick = () => {
+        // If we're on the homepage, scroll to search section
+        if (location.pathname === "/") {
+            const searchSection = document.getElementById("search-section");
+            if (searchSection) {
+                searchSection.scrollIntoView({ behavior: "smooth", block: "center" });
+            }
+        } else {
+            // If we're on a different page, navigate to homepage first
+            navigate("/");
+            // Wait for navigation to complete, then scroll
+            setTimeout(() => {
+                const searchSection = document.getElementById("search-section");
+                if (searchSection) {
+                    searchSection.scrollIntoView({ behavior: "smooth", block: "center" });
+                }
+            }, 100);
+        }
+    };
+
     const getUserInitials = () => {
         const username = userProfile?.username || "U";
         return username.substring(0, 2).toUpperCase();
@@ -67,10 +84,7 @@ const Header = () => {
     // Navigation items for customer
     const customerNavItems = [
         { path: "/", icon: Home, label: "Trang chủ", exact: true },
-        { path: "/customer/profile", icon: User, label: "Hồ sơ" },
-        { path: "/customer/orders", icon: ShoppingBag, label: "Đơn hàng" },
-        { path: "/customer/wishlist", icon: Heart, label: "Yêu thích" },
-        { path: "/customer/settings", icon: Settings, label: "Cài đặt" },
+        { path: "/books", icon: BookOpen, label: "Sách" },
     ];
 
     const isActive = (path, exact = false) => {
@@ -159,71 +173,76 @@ const Header = () => {
                                 <BookOpen className="h-6 w-6 text-primary" />
                                 <span className="text-xl font-bold hidden sm:block">BookNest</span>
                             </Link>
-
-                            {/* Desktop Navigation for Customer */}
-                            {userId && role === "CUSTOMER" && (
-                                <nav className="hidden md:flex items-center gap-1 ml-6">
-                                    {customerNavItems.slice(0, 4).map((item) => {
-                                        const Icon = item.icon;
-                                        const active = isActive(item.path, item.exact);
-                                        return (
-                                            <Link
-                                                key={item.path}
-                                                to={item.path}
-                                                className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                                                    active
-                                                        ? "bg-primary/10 text-primary"
-                                                        : "text-muted-foreground hover:bg-muted hover:text-foreground"
-                                                }`}
-                                            >
-                                                <Icon className="h-4 w-4" />
-                                                {item.label}
-                                            </Link>
-                                        );
-                                    })}
-                                </nav>
-                            )}
-
-                            {/* Desktop Navigation for non-customers */}
-                            {!userId || role !== "CUSTOMER" ? (
-                                <nav className="hidden md:flex items-center gap-2">
-                                    <Button
-                                        variant="ghost"
-                                        onClick={() => navigate("/")}
-                                        className="gap-2"
-                                    >
-                                        <Home className="w-4 h-4" />
-                                        Trang chủ
-                                    </Button>
-
-                                    <Button
-                                        variant="ghost"
-                                        onClick={() => navigate("/books")}
-                                        className="gap-2"
-                                    >
-                                        <BookOpen className="w-4 h-4" />
-                                        Sách
-                                    </Button>
-
-                                    {role === "SELLER" && (
-                                        <Button
-                                            variant="ghost"
-                                            onClick={() => navigate("/seller")}
-                                            className="gap-2"
-                                        >
-                                            <Store className="w-4 h-4" />
-                                            Quản lý bán hàng
-                                        </Button>
-                                    )}
-                                </nav>
-                            ) : null}
                         </div>
+
+                        {/* Center Section - Desktop Navigation for Customer */}
+                        {userId && role === "CUSTOMER" && (
+                            <nav className="hidden md:flex items-center gap-1 absolute left-1/2 transform -translate-x-1/2">
+                                {customerNavItems.slice(0, 4).map((item) => {
+                                    const Icon = item.icon;
+                                    const active = isActive(item.path, item.exact);
+                                    return (
+                                        <Link
+                                            key={item.path}
+                                            to={item.path}
+                                            className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                                                active
+                                                    ? "bg-primary/10 text-primary"
+                                                    : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                                            }`}
+                                        >
+                                            <Icon className="h-4 w-4" />
+                                            {item.label}
+                                        </Link>
+                                    );
+                                })}
+                            </nav>
+                        )}
+
+                        {/* Center Section - Desktop Navigation for non-customers */}
+                        {(!userId || role !== "CUSTOMER") && (
+                            <nav className="hidden md:flex items-center gap-2 absolute left-1/2 transform -translate-x-1/2">
+                                <Button
+                                    variant="ghost"
+                                    onClick={() => navigate("/")}
+                                    className="gap-2"
+                                >
+                                    <Home className="w-4 h-4" />
+                                    Trang chủ
+                                </Button>
+
+                                <Button
+                                    variant="ghost"
+                                    onClick={() => navigate("/books")}
+                                    className="gap-2"
+                                >
+                                    <BookOpen className="w-4 h-4" />
+                                    Sách
+                                </Button>
+
+                                {role === "SELLER" && (
+                                    <Button
+                                        variant="ghost"
+                                        onClick={() => navigate("/seller")}
+                                        className="gap-2"
+                                    >
+                                        <Store className="w-4 h-4" />
+                                        Quản lý bán hàng
+                                    </Button>
+                                )}
+                            </nav>
+                        )}
 
                         {/* Right Section */}
                         <div className="flex items-center gap-2">
                             {/* Search Button - Only for logged in users */}
                             {userId && (
-                                <Button variant="ghost" size="icon" className="hidden sm:flex">
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="hidden sm:flex"
+                                    onClick={handleSearchClick}
+                                >
                                     <Search className="h-5 w-5" />
                                 </Button>
                             )}
@@ -299,13 +318,6 @@ const Header = () => {
                                         {role === "CUSTOMER" && (
                                             <>
                                                 <DropdownMenuItem
-                                                    onClick={() => navigate("/")}
-                                                    className="gap-2 cursor-pointer"
-                                                >
-                                                    <Home className="w-4 h-4" />
-                                                    Trang chủ
-                                                </DropdownMenuItem>
-                                                <DropdownMenuItem
                                                     onClick={() => navigate("/customer/profile")}
                                                     className="gap-2 cursor-pointer"
                                                 >
@@ -320,11 +332,11 @@ const Header = () => {
                                                     Đơn hàng của tôi
                                                 </DropdownMenuItem>
                                                 <DropdownMenuItem
-                                                    onClick={() => navigate("/customer/settings")}
+                                                    onClick={() => navigate("/customer/cart")}
                                                     className="gap-2 cursor-pointer"
                                                 >
-                                                    <Settings className="w-4 h-4" />
-                                                    Cài đặt
+                                                    <ShoppingCart className="w-4 h-4" />
+                                                    Giỏ hàng
                                                 </DropdownMenuItem>
                                             </>
                                         )}
@@ -375,4 +387,3 @@ const Header = () => {
 };
 
 export default Header;
-
