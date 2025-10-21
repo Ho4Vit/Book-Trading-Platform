@@ -5,6 +5,16 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { ShoppingCart, X, ShoppingBag } from "lucide-react";
 import { cartApi } from "@/api/cartApi";
 import { useAuthStore } from "@/store/authStore";
@@ -16,16 +26,22 @@ import { useQueryClient } from "@tanstack/react-query";
 
 export default function CartPopover() {
     const navigate = useNavigate();
-    const { userId } = useAuthStore();
+    const { userId: rawUserId, role } = useAuthStore();
+    const userId = rawUserId || "";
     const queryClient = useQueryClient();
     const [isOpen, setIsOpen] = useState(false);
+    const [isConfirmDialogOpen, setIsConfirmDialogOpen] = useState(false);
+    const [itemToRemove, setItemToRemove] = useState(null);
+
+    // Only fetch cart data if user is a customer
+    const isCustomer = role === "CUSTOMER";
 
     // Fetch cart data
     const { data: cartData, isLoading } = useCustomQuery(
         ["cart", userId],
         () => cartApi.getCartByCustomerId(userId),
         {
-            enabled: !!userId,
+            enabled: !!userId && isCustomer, // Only fetch if user is a customer
             refetchOnWindowFocus: true,
         }
     );
@@ -33,11 +49,11 @@ export default function CartPopover() {
     // Remove from cart mutation
     const removeMutation = useCustomMutation(
         ({ bookId }) => cartApi.removeFromCart(userId, bookId),
+        null,
         {
             onSuccess: () => {
                 toast.success("Đã xóa sản phẩm khỏi giỏ hàng");
-                // Use invalidateQueries for consistent cache update
-                queryClient.invalidateQueries({ queryKey: ["cart", userId] });
+                queryClient.invalidateQueries(["cart", userId]);
             },
             onError: (error) => {
                 toast.error(error?.message || "Không thể xóa sản phẩm");
@@ -45,8 +61,22 @@ export default function CartPopover() {
         }
     );
 
-    const handleRemove = (bookId) => {
-        removeMutation.mutate({ bookId });
+    const handleRemove = (item) => {
+        setItemToRemove(item);
+        setIsConfirmDialogOpen(true);
+    };
+
+    const confirmRemove = () => {
+        if (itemToRemove) {
+            removeMutation.mutate({ userId, bookId: itemToRemove.bookId });
+            setIsConfirmDialogOpen(false);
+            setItemToRemove(null);
+        }
+    };
+
+    const cancelRemove = () => {
+        setIsConfirmDialogOpen(false);
+        setItemToRemove(null);
     };
 
     // Access cart data - handle both possible response structures
@@ -64,6 +94,11 @@ export default function CartPopover() {
         setIsOpen(false);
         navigate("/customer/checkout");
     };
+
+    // Don't render cart for non-customers
+    if (!isCustomer) {
+        return null;
+    }
 
     return (
         <Popover open={isOpen} onOpenChange={setIsOpen}>
@@ -114,7 +149,7 @@ export default function CartPopover() {
                                 Giỏ hàng trống
                             </p>
                             <p className="text-xs text-muted-foreground">
-                                Hãy thêm sản phẩm vào giỏ hàng nh��!
+                                Hãy thêm sản phẩm vào giỏ hàng nhé!
                             </p>
                         </div>
                     ) : (
@@ -160,7 +195,7 @@ export default function CartPopover() {
                                                 variant="ghost"
                                                 size="icon"
                                                 className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-                                                onClick={() => handleRemove(item.bookId)}
+                                                onClick={() => handleRemove(item)}
                                                 disabled={removeMutation.isPending}
                                             >
                                                 <X className="w-4 h-4" />
@@ -207,6 +242,26 @@ export default function CartPopover() {
                     </div>
                 )}
             </PopoverContent>
+
+            <AlertDialog open={isConfirmDialogOpen} onOpenChange={setIsConfirmDialogOpen}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Xác nhận xóa sản phẩm</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Bạn có chắc chắn muốn xóa sản phẩm này khỏi giỏ hàng?
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel onClick={cancelRemove}>Hủy</AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={confirmRemove}
+                            className="bg-red-600 hover:bg-red-700 text-white"
+                        >
+                            Xóa sản phẩm
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </Popover>
     );
 }

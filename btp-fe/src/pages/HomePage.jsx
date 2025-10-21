@@ -49,11 +49,11 @@ export default function HomePage() {
 	// Add to cart mutation
 	const addToCartMutation = useCustomMutation(
 		(data) => cartApi.addToCart(data),
+		null,
 		{
 			onSuccess: () => {
 				toast.success("Đã thêm sách vào giỏ hàng!");
-				// Invalidate cart queries to update all components using cart data
-				queryClient.invalidateQueries({ queryKey: ["cart", userId] });
+				queryClient.invalidateQueries(["cart", userId]);
 			},
 			onError: (error) => {
 				toast.error(error?.message || "Không thể thêm vào giỏ hàng");
@@ -69,7 +69,11 @@ export default function HomePage() {
 		: [];
 
 	const featuredBooks = books.slice(0, 4);
-	const trendingBooks = books.slice(4, 8);
+
+	// Sort books by soldCount for trending section
+	const trendingBooks = [...books]
+		.sort((a, b) => (b.soldCount || 0) - (a.soldCount || 0))
+		.slice(0, 8);
 
 	// Handle add to cart
 	const handleAddToCart = (book, event) => {
@@ -166,6 +170,7 @@ export default function HomePage() {
 
 						{/* Search Bar */}
 						<motion.div
+							id="search-section"
 							initial={{ opacity: 0, y: 20 }}
 							animate={{ opacity: 1, y: 0 }}
 							transition={{ delay: 0.3, duration: 0.6 }}
@@ -295,15 +300,116 @@ export default function HomePage() {
 						</Card>
 					) : (
 						<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-							{featuredBooks.map((book, index) => (
+							{featuredBooks.map((book, index) => {
+								const isOutOfStock = book.stock === 0 || book.stock === null;
+								return (
+									<motion.div
+										key={book.id || book._id}
+										initial={{ opacity: 0, y: 30 }}
+										animate={{ opacity: 1, y: 0 }}
+										transition={{ delay: index * 0.1 }}
+									>
+										<Card
+											className={`group overflow-hidden hover:shadow-2xl transition-all duration-300 cursor-pointer h-full border-2 hover:border-primary ${
+												isOutOfStock ? "opacity-75" : ""
+											}`}
+											onClick={() => navigate(`/books/${book.id}`)}
+										>
+											<div className="relative aspect-[3/4] overflow-hidden bg-muted">
+												<img
+													src={
+														book.coverImage && book.coverImage !== "string"
+															? book.coverImage
+															: "https://via.placeholder.com/300x400?text=No+Image"
+													}
+													alt={book.title}
+													className={`w-full h-full object-cover group-hover:scale-110 transition-transform duration-500 ${
+														isOutOfStock ? "grayscale" : ""
+													}`}
+												/>
+												<div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+												{isOutOfStock ? (
+													<Badge className="absolute top-3 right-3 bg-red-500 text-white border-0">
+														Hết hàng
+													</Badge>
+												) : (
+													<>
+														<Badge className="absolute top-3 right-3 bg-green-500 text-white border-0">
+															<Star className="w-3 h-3 mr-1" />
+															Mới
+														</Badge>
+														{book.stock && book.stock <= 5 && (
+															<Badge className="absolute top-12 right-3 bg-orange-500 text-white border-0 text-xs">
+																Chỉ còn {book.stock}
+															</Badge>
+														)}
+													</>
+												)}
+											</div>
+											<CardHeader className="pb-3">
+												<CardTitle className="line-clamp-2 text-lg group-hover:text-primary transition-colors">
+													{book.title}
+												</CardTitle>
+												<CardDescription className="line-clamp-1">
+													{book.author}
+												</CardDescription>
+											</CardHeader>
+											<CardFooter className="pt-0 flex items-center justify-between">
+												<div>
+													{book.price !== undefined && (
+														<p className="text-2xl font-bold text-primary">
+															{Number(book.price).toLocaleString("vi-VN")}đ
+														</p>
+													)}
+												</div>
+												<Button
+													size="sm"
+													className="gap-2 opacity-0 group-hover:opacity-100 transition-opacity"
+													onClick={(e) => handleAddToCart(book, e)}
+													disabled={addToCartMutation.isPending || isOutOfStock}
+												>
+													<ShoppingCart className="w-4 h-4" />
+													{isOutOfStock ? "Hết hàng" : "Mua"}
+												</Button>
+											</CardFooter>
+										</Card>
+									</motion.div>
+								);
+							})}
+						</div>
+					)}
+				</div>
+			</section>
+
+			{/* Trending Books Section */}
+			<section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
+				<div className="flex items-center justify-between mb-12">
+					<div>
+						<h2 className="text-4xl font-bold mb-2 flex items-center gap-3">
+							<TrendingUp className="w-10 h-10 text-orange-500" />
+							Xu hướng
+						</h2>
+						<p className="text-lg text-muted-foreground">
+							Sách đang được mua nhiều nhất hiện nay
+						</p>
+					</div>
+				</div>
+
+				{!isLoading && trendingBooks.length > 0 && (
+					<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+						{trendingBooks.map((book, index) => {
+							const isOutOfStock = book.stock === 0 || book.stock === null;
+							return (
 								<motion.div
 									key={book.id || book._id}
-									initial={{ opacity: 0, y: 30 }}
-									animate={{ opacity: 1, y: 0 }}
+									initial={{ opacity: 0, scale: 0.9 }}
+									animate={{ opacity: 1, scale: 1 }}
 									transition={{ delay: index * 0.1 }}
 								>
 									<Card
-										className="group overflow-hidden hover:shadow-2xl transition-all duration-300 cursor-pointer h-full border-2 hover:border-primary"
+										className={`group overflow-hidden hover:shadow-2xl transition-all duration-300 cursor-pointer h-full border-2 hover:border-orange-500 ${
+											isOutOfStock ? "opacity-75" : ""
+										}`}
 										onClick={() => navigate(`/books/${book.id}`)}
 									>
 										<div className="relative aspect-[3/4] overflow-hidden bg-muted">
@@ -314,16 +420,31 @@ export default function HomePage() {
 														: "https://via.placeholder.com/300x400?text=No+Image"
 												}
 												alt={book.title}
-												className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+												className={`w-full h-full object-cover group-hover:scale-110 transition-transform duration-500 ${
+													isOutOfStock ? "grayscale" : ""
+												}`}
 											/>
 											<div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-											<Badge className="absolute top-3 right-3 bg-green-500 text-white border-0">
-												<Star className="w-3 h-3 mr-1" />
-												Mới
-											</Badge>
+											{isOutOfStock ? (
+												<Badge className="absolute top-3 left-3 bg-red-500 text-white border-0">
+													Hết hàng
+												</Badge>
+											) : (
+												<>
+													<Badge className="absolute top-3 left-3 bg-orange-500 text-white border-0 animate-pulse">
+														<TrendingUp className="w-3 h-3 mr-1" />
+														Hot
+													</Badge>
+													{book.stock && book.stock <= 5 && (
+														<Badge className="absolute top-12 left-3 bg-red-500 text-white border-0 text-xs animate-pulse">
+															Chỉ còn {book.stock}
+														</Badge>
+													)}
+												</>
+											)}
 										</div>
 										<CardHeader className="pb-3">
-											<CardTitle className="line-clamp-2 text-lg group-hover:text-primary transition-colors">
+											<CardTitle className="line-clamp-2 text-lg group-hover:text-orange-500 transition-colors">
 												{book.title}
 											</CardTitle>
 											<CardDescription className="line-clamp-1">
@@ -342,92 +463,16 @@ export default function HomePage() {
 												size="sm"
 												className="gap-2 opacity-0 group-hover:opacity-100 transition-opacity"
 												onClick={(e) => handleAddToCart(book, e)}
-												disabled={addToCartMutation.isPending}
+												disabled={addToCartMutation.isPending || isOutOfStock}
 											>
 												<ShoppingCart className="w-4 h-4" />
-												Mua
+												{isOutOfStock ? "Hết hàng" : "Mua"}
 											</Button>
 										</CardFooter>
 									</Card>
 								</motion.div>
-							))}
-						</div>
-					)}
-				</div>
-			</section>
-
-			{/* Trending Books Section */}
-			<section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
-				<div className="flex items-center justify-between mb-12">
-					<div>
-						<h2 className="text-4xl font-bold mb-2 flex items-center gap-3">
-							<TrendingUp className="w-10 h-10 text-orange-500" />
-							Xu hướng
-						</h2>
-						<p className="text-lg text-muted-foreground">
-							Sách đang được tìm kiếm nhiều nhất
-						</p>
-					</div>
-				</div>
-
-				{!isLoading && trendingBooks.length > 0 && (
-					<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-						{trendingBooks.map((book, index) => (
-							<motion.div
-								key={book.id || book._id}
-								initial={{ opacity: 0, scale: 0.9 }}
-								animate={{ opacity: 1, scale: 1 }}
-								transition={{ delay: index * 0.1 }}
-							>
-								<Card
-									className="group overflow-hidden hover:shadow-2xl transition-all duration-300 cursor-pointer h-full border-2 hover:border-orange-500"
-									onClick={() => navigate(`/books/${book.id}`)}
-								>
-									<div className="relative aspect-[3/4] overflow-hidden bg-muted">
-										<img
-											src={
-												book.coverImage && book.coverImage !== "string"
-													? book.coverImage
-													: "https://via.placeholder.com/300x400?text=No+Image"
-											}
-											alt={book.title}
-											className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-										/>
-										<div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-										<Badge className="absolute top-3 left-3 bg-orange-500 text-white border-0 animate-pulse">
-											<TrendingUp className="w-3 h-3 mr-1" />
-											Hot
-										</Badge>
-									</div>
-									<CardHeader className="pb-3">
-										<CardTitle className="line-clamp-2 text-lg group-hover:text-orange-500 transition-colors">
-											{book.title}
-										</CardTitle>
-										<CardDescription className="line-clamp-1">
-											{book.author}
-										</CardDescription>
-									</CardHeader>
-									<CardFooter className="pt-0 flex items-center justify-between">
-										<div>
-											{book.price !== undefined && (
-												<p className="text-2xl font-bold text-primary">
-													{Number(book.price).toLocaleString("vi-VN")}đ
-												</p>
-											)}
-										</div>
-										<Button
-											size="sm"
-											className="gap-2 opacity-0 group-hover:opacity-100 transition-opacity"
-											onClick={(e) => handleAddToCart(book, e)}
-											disabled={addToCartMutation.isPending}
-										>
-											<ShoppingCart className="w-4 h-4" />
-											Mua
-										</Button>
-									</CardFooter>
-								</Card>
-							</motion.div>
-						))}
+							);
+						})}
 					</div>
 				)}
 			</section>

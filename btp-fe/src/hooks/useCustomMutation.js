@@ -41,16 +41,14 @@ export default function useCustomMutation(apiFnOrUrl, method, options = {}) {
 
     return useMutation({
         mutationFn,
+        ...options,
         onSuccess: (data) => {
-            // Don't show toast here if apiClient already showed it
-            // toast.success("Thao tác thành công!");
             if (options.invalidateKeys)
                 options.invalidateKeys.forEach((key) =>
                     queryClient.invalidateQueries([key])
                 );
             options.onSuccess?.(data);
         },
-        onError: options.onError,
-        ...options,
     });
+
 }

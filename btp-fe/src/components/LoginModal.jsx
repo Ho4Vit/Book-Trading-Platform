@@ -68,7 +68,7 @@ const LoginModal = ({ onClose }) => {
 							navigate("/");
 							break;
 						case "SELLER":
-							navigate("/");
+							navigate("/seller");
 							break;
 						case "ADMIN":
 							navigate("/admin");
