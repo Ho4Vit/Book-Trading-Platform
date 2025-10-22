@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { bookApi, cartApi, sellerApi } from "@/api";
+import { bookApi, cartApi, sellerApi, feedbackApi } from "@/api";
 import toast from "react-hot-toast";
 import useCustomQuery from "@/hooks/useCustomQuery";
 import useCustomMutation from "@/hooks/useCustomMutation";
@@ -77,6 +77,19 @@ const BookDetailPage = () => {
 
     const seller = sellerResponse?.data || sellerResponse;
 
+    // Fetch average rating for the book
+    const { data: ratingData } = useCustomQuery(
+        ["bookRating", book?.id],
+        () => feedbackApi.getAverageRating(book?.id),
+        {
+            enabled: !!book?.id,
+            staleTime: 1000 * 60 * 5,
+        }
+    );
+
+    const averageRating = ratingData?.data?.averageRating || ratingData || 0;
+    const ratingCount = ratingData?.data?.count || ratingData?.count || 0;
+
     // Fetch all books for related books section
     const { data: allBooksData } = useCustomQuery(
         ["books"],
@@ -131,7 +144,7 @@ const BookDetailPage = () => {
 
     const handleNavigateToStore = () => {
         if (seller?.id) {
-            navigate(`/seller/${seller.id}/store`);
+            navigate(`/store/${seller.id}`);
         }
     };
 
@@ -199,7 +212,6 @@ const BookDetailPage = () => {
     const relatedBooks = allBooks.filter(b => {
         // Exclude current book
         if (b.id === book.id || b._id === book._id) return false;
-        // Check if has at least one matching category
         if (book.categoryNames && b.categoryNames) {
             return book.categoryNames.some(cat => b.categoryNames.includes(cat));
         }
@@ -228,7 +240,7 @@ const BookDetailPage = () => {
                             </BreadcrumbItem>
                             <BreadcrumbSeparator />
                             <BreadcrumbItem>
-                                <BreadcrumbLink href="/">Sách</BreadcrumbLink>
+                                <BreadcrumbLink href="/category/all">Sách</BreadcrumbLink>
                             </BreadcrumbItem>
                             <BreadcrumbSeparator />
                             <BreadcrumbItem>
@@ -304,15 +316,32 @@ const BookDetailPage = () => {
                         <div>
                             <h1 className="text-4xl font-bold mb-4 leading-tight">{book.title}</h1>
                             <div className="flex items-center gap-4 flex-wrap">
-                                <div className="flex items-center gap-1">
-                                    {[...Array(5)].map((_, i) => (
-                                        <Star
-                                            key={i}
-                                            className={`w-5 h-5 ${i < 4 ? "fill-yellow-400 text-yellow-400" : "text-gray-300"}`}
-                                        />
-                                    ))}
-                                    <span className="ml-2 text-sm text-muted-foreground">(120 đánh giá)</span>
-                                </div>
+                                {averageRating > 0 ? (
+                                    <div className="flex items-center gap-1">
+                                        {[...Array(5)].map((_, i) => (
+                                            <Star
+                                                key={i}
+                                                className={`w-5 h-5 ${
+                                                    i < Math.floor(averageRating)
+                                                        ? "fill-yellow-400 text-yellow-400"
+                                                        : i < averageRating
+                                                        ? "fill-yellow-400/50 text-yellow-400"
+                                                        : "text-gray-300"
+                                                }`}
+                                            />
+                                        ))}
+                                        <span className="ml-2 text-sm text-muted-foreground">
+                                            {Number(averageRating).toFixed(1)} ({ratingCount} đánh giá)
+                                        </span>
+                                    </div>
+                                ) : (
+                                    <div className="flex items-center gap-1">
+                                        {[...Array(5)].map((_, i) => (
+                                            <Star key={i} className="w-5 h-5 text-gray-300" />
+                                        ))}
+                                        <span className="ml-2 text-sm text-muted-foreground">Chưa có đánh giá</span>
+                                    </div>
+                                )}
                                 <Separator orientation="vertical" className="h-5" />
                                 <div className="flex items-center gap-2 text-sm">
                                     <TrendingUp className="w-4 h-4 text-primary" />

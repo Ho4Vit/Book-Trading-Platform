@@ -3,6 +3,7 @@ import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuthStore } from "@/store/authStore";
 import { sellerApi, customerApi } from "@/api/index.js";
 import CartPopover from "@/components/CartPopover";
+import Categories from "@/components/Categories";
 import useCustomQuery from "@/hooks/useCustomQuery";
 import toast from "react-hot-toast";
 import LoginModal from "@/components/LoginModal";
@@ -57,16 +58,13 @@ const Header = () => {
     };
 
     const handleSearchClick = () => {
-        // If we're on the homepage, scroll to search section
         if (location.pathname === "/") {
             const searchSection = document.getElementById("search-section");
             if (searchSection) {
                 searchSection.scrollIntoView({ behavior: "smooth", block: "center" });
             }
         } else {
-            // If we're on a different page, navigate to homepage first
             navigate("/");
-            // Wait for navigation to complete, then scroll
             setTimeout(() => {
                 const searchSection = document.getElementById("search-section");
                 if (searchSection) {
@@ -84,7 +82,7 @@ const Header = () => {
     // Navigation items for customer
     const customerNavItems = [
         { path: "/", icon: Home, label: "Trang chủ", exact: true },
-        { path: "/books", icon: BookOpen, label: "Sách" },
+        { path: "/category/all", icon: BookOpen, label: "Sách" },
     ];
 
     const isActive = (path, exact = false) => {
@@ -196,6 +194,7 @@ const Header = () => {
                                         </Link>
                                     );
                                 })}
+                                <Categories />
                             </nav>
                         )}
 
@@ -211,9 +210,11 @@ const Header = () => {
                                     Trang chủ
                                 </Button>
 
+                                <Categories />
+
                                 <Button
                                     variant="ghost"
-                                    onClick={() => navigate("/books")}
+                                    onClick={() => navigate("/category/all")}
                                     className="gap-2"
                                 >
                                     <BookOpen className="w-4 h-4" />

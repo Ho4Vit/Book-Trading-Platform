@@ -19,6 +19,7 @@ import useCustomQuery from "@/hooks/useCustomQuery";
 import useCustomMutation from "@/hooks/useCustomMutation";
 import Header from "@/components/Header.jsx";
 import SearchBar from "@/components/SearchBar.jsx";
+import BookRating from "@/components/BookRating.jsx";
 import toast from "react-hot-toast";
 import { useAuthStore } from "@/store/authStore";
 import { useQueryClient } from "@tanstack/react-query";
@@ -33,6 +34,7 @@ import {
 	Zap,
 	Heart,
 } from "lucide-react";
+
 
 export default function HomePage() {
 	const navigate = useNavigate();
@@ -186,12 +188,16 @@ export default function HomePage() {
 							transition={{ delay: 0.4, duration: 0.6 }}
 							className="flex flex-wrap items-center justify-center gap-4"
 						>
-							<Button size="lg" className="group gap-2 px-8 h-12 text-base font-semibold shadow-lg">
+							<Button
+                                onClick={() => navigate("/category/all")}
+                                size="lg" className="group gap-2 px-8 h-12 text-base font-semibold shadow-lg">
 								<BookOpen className="w-5 h-5 group-hover:scale-110 transition-transform" />
 								Khám phá ngay
 								<ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
 							</Button>
-							<Button size="lg" variant="outline" className="gap-2 px-8 h-12 text-base font-semibold">
+							<Button
+                               onClick={() => navigate("/register-seller")}
+                                size="lg" variant="outline" className="gap-2 px-8 h-12 text-base font-semibold">
 								Bán sách của bạn
 							</Button>
 						</motion.div>
@@ -345,6 +351,7 @@ export default function HomePage() {
 														)}
 													</>
 												)}
+												<BookRating bookId={book.id || book._id} />
 											</div>
 											<CardHeader className="pb-3">
 												<CardTitle className="line-clamp-2 text-lg group-hover:text-primary transition-colors">
@@ -442,6 +449,7 @@ export default function HomePage() {
 													)}
 												</>
 											)}
+											<BookRating bookId={book.id || book._id} />
 										</div>
 										<CardHeader className="pb-3">
 											<CardTitle className="line-clamp-2 text-lg group-hover:text-orange-500 transition-colors">

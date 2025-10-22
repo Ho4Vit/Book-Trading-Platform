@@ -186,11 +186,11 @@ export default function CustomerCart() {
 
     // Group items by seller
     const groupedBySeller = cartItems.reduce((acc, item) => {
-        const sellerName = item.sellerName || "Unknown Seller";
-        if (!acc[sellerName]) {
-            acc[sellerName] = [];
+        const storeName = item.storeName || "Unknown Seller";
+        if (!acc[storeName]) {
+            acc[storeName] = [];
         }
-        acc[sellerName].push(item);
+        acc[storeName].push(item);
         return acc;
     }, {});
 
@@ -298,9 +298,9 @@ export default function CustomerCart() {
                             {/* Cart Items */}
                             <div className="lg:col-span-2 space-y-6">
                                 <AnimatePresence mode="popLayout">
-                                    {Object.entries(groupedBySeller).map(([sellerName, items]) => (
+                                    {Object.entries(groupedBySeller).map(([storeName, items]) => (
                                         <motion.div
-                                            key={sellerName}
+                                            key={storeName}
                                             layout
                                             initial={{ opacity: 0, y: 20 }}
                                             animate={{ opacity: 1, y: 0 }}
@@ -312,14 +312,14 @@ export default function CustomerCart() {
                                                 <CardHeader className="bg-muted/50 border-b">
                                                     <div className="flex items-center gap-3">
                                                         <Avatar className="h-10 w-10 border-2">
-                                                            <AvatarImage src="" alt={sellerName} />
+                                                            <AvatarImage src="" alt={storeName} />
                                                             <AvatarFallback className="bg-primary/10 text-primary font-bold">
-                                                                {sellerName.charAt(0).toUpperCase()}
+                                                                {storeName.charAt(0).toUpperCase()}
                                                             </AvatarFallback>
                                                         </Avatar>
                                                         <div className="flex items-center gap-2">
                                                             <Store className="w-4 h-4 text-primary" />
-                                                            <h3 className="font-semibold">{sellerName}</h3>
+                                                            <h3 className="font-semibold">{storeName}</h3>
                                                             <Badge variant="secondary" className="text-xs">
                                                                 {items.length} sản phẩm
                                                             </Badge>

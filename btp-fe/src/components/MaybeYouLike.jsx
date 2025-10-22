@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import BookRating from "@/components/BookRating";
 import { ShoppingCart, Sparkles } from "lucide-react";
 import useCustomMutation from "@/hooks/useCustomMutation";
 import { cartApi } from "@/api";
@@ -115,6 +116,7 @@ const MaybeYouLike = ({ relatedBooks }) => {
                                                 </Badge>
                                             )
                                         )}
+                                        <BookRating bookId={relatedBook.id || relatedBook._id} />
                                     </div>
                                     <CardHeader className="pb-3">
                                         <CardTitle className="line-clamp-2 text-base group-hover:text-primary transition-colors">

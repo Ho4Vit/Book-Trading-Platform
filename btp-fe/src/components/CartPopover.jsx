@@ -180,7 +180,7 @@ export default function CartPopover() {
                                                     {item.bookName}
                                                 </p>
                                                 <p className="text-xs text-muted-foreground mb-1">
-                                                    Người bán: {item.sellerName}
+                                                    Store: {item.storeName}
                                                 </p>
                                                 <div className="flex items-center justify-between">
                                                     <p className="text-xs text-muted-foreground">

@@ -6,6 +6,7 @@ import ScrollToTop from "@/components/ScrollToTop";
 // Lazy load pages
 const HomePage = lazy(() => import("../pages/HomePage"));
 const BookDetailPage = lazy(() => import("../pages/customer/BookDetailPage"));
+const CategoryBooks = lazy(() => import("../pages/CategoryBooks"));
 const NotFoundPage = lazy(() => import("../pages/NotFoundPage"));
 const RegisterSeller = lazy(() => import("../pages/RegisterSeller"));
 const RegisterCustomer = lazy(() => import("../pages/RegisterCustomer"));
@@ -33,6 +34,9 @@ const CustomerDashboard = lazy(() => import("../pages/customer/CustomerDashboard
 const CustomerProfile = lazy(() => import("../pages/customer/CustomerProfile"));
 const CustomerOrders = lazy(() => import("../pages/customer/CustomerOrders"));
 const CustomerCart = lazy(() => import("../pages/customer/CustomerCart"));
+const PaymentCheckout = lazy(() => import("../pages/customer/PaymentCheckout"));
+const PaymentSuccess = lazy(() => import("../pages/customer/PaymentSuccess"));
+const StoreInformation = lazy(() => import("../pages/StoreInformation"));
 
 export default function AppRoutes() {
     return (
@@ -51,6 +55,9 @@ export default function AppRoutes() {
                     <Route path="/books/:id" element={<BookDetailPage />} />
                     <Route path="/register-seller" element={<RegisterSeller />} />
                     <Route path="/register-customer" element={<RegisterCustomer />} />
+                    <Route path="/category/:categoryId" element={<CategoryBooks />} />
+                    <Route path="/store/:sellerId" element={<StoreInformation />} />
+                    <Route path="/payment/success" element={<PaymentSuccess />} />
 
                     {/* Customer Routes */}
                     <Route
@@ -61,6 +68,8 @@ export default function AppRoutes() {
                         <Route path="cart" element={<CustomerCart />} />
                         <Route path="profile" element={<CustomerProfile />} />
                         <Route path="orders" element={<CustomerOrders />} />
+                        <Route path="checkout" element={<PaymentCheckout />} />
+                        <Route path="store-information" element={<StoreInformation />} />
                     </Route>
 
                     {/* Seller Routes */}
