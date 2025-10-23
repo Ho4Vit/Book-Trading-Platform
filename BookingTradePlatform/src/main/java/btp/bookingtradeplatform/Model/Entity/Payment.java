@@ -22,6 +22,8 @@ public class Payment {
 
     private BigDecimal amount;
 
+
+
     @Enumerated(EnumType.STRING)
     private PaymentMethod method;
 

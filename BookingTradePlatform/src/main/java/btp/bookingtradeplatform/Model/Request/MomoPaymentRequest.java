@@ -9,7 +9,8 @@ import java.math.BigDecimal;
 @NoArgsConstructor
 @Builder
 public class MomoPaymentRequest {
-    private Long orderId;      // ID đơn hàng
+    private Long orderId;
+    private String transactionId;      // ID đơn hàng
     private String orderInfo;  // Thông tin mô tả đơn hàng
     private BigDecimal discount;
     private String returnUrl;  // URL người dùng được chuyển tới sau thanh toán

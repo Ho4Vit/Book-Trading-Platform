@@ -21,6 +21,9 @@ public class Order {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(unique = true, updatable = false)
+    private String transactionId;
+
     private LocalDateTime orderDate;
 
     private BigDecimal totalPrice;
@@ -37,5 +40,10 @@ public class Order {
     private List<CartItem> orderItems;
 
 
-
+    @PrePersist
+    public void prePersist() {
+        if (transactionId == null) {
+            transactionId = java.util.UUID.randomUUID().toString();
+        }
+    }
 }

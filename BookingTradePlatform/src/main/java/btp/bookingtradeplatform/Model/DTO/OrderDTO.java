@@ -22,6 +22,7 @@ public class OrderDTO {
     private BigDecimal totalPrice;
     private OrderStatus status;
     private LocalDateTime orderDate;
+    private String transactionId;
 
     public static OrderDTO fromEntity(Order order) {
         return OrderDTO.builder()
@@ -33,6 +34,7 @@ public class OrderDTO {
                 .totalPrice(order.getTotalPrice())
                 .status(order.getStatus())
                 .orderDate(order.getOrderDate())
+                .transactionId(order.getTransactionId())
                 .build();
     }
 }

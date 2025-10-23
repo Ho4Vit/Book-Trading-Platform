@@ -56,7 +56,6 @@ public class MomoPaymentService {
      */
     public MomoPaymentResponse createPayment(MomoPaymentRequest request) throws Exception {
         String requestId = UUID.randomUUID().toString();
-        String orderId = String.valueOf(request.getOrderId());
         String orderInfo = request.getOrderInfo();
         String requestType = "captureWallet";
         String extraData = "";
@@ -65,6 +64,7 @@ public class MomoPaymentService {
                 .orElseThrow(() -> new BusinessException(AppException.NOT_FOUND));
         BigDecimal totalPrice = order.getTotalPrice()
                 .subtract(request.getDiscount());
+        String orderId = order.getTransactionId();
         long amount = totalPrice.longValue();
 
         // 🔹 Chuỗi ký chuẩn MoMo
