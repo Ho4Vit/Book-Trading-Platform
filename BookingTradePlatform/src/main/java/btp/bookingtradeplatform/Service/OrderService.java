@@ -3,6 +3,7 @@ package btp.bookingtradeplatform.Service;
 import btp.bookingtradeplatform.Exception.AppException;
 import btp.bookingtradeplatform.Exception.BusinessException;
 import btp.bookingtradeplatform.Model.DTO.OrderDTO;
+import btp.bookingtradeplatform.Model.DTO.PaymentDTO;
 import btp.bookingtradeplatform.Model.Entity.*;
 import btp.bookingtradeplatform.Model.Enum.OrderStatus;
 import btp.bookingtradeplatform.Model.Request.CreateOrderRequest;
@@ -37,12 +38,15 @@ public class OrderService {
     @Autowired
     private BookRepository bookRepository;
 
-    public ResponseEntity<ResponseData<List<Order>>> getAllOrders() {
+    public ResponseEntity<ResponseData<List<OrderDTO>>> getAllOrders() {
         List<Order> orders = orderRepository.findAll();
+        List<OrderDTO> dto = orders.stream()
+                .map(OrderDTO::fromEntity)
+                .toList();
         return ResponseEntity.ok(new ResponseData<>(
                 AppException.SUCCESS.getCode(),
                 "Fetched all orders successfully",
-                orders
+                dto
         ));
     }
 
@@ -82,7 +86,10 @@ public class OrderService {
         order.setOrderDate(LocalDateTime.now());
         order.setStatus(OrderStatus.PENDING);
 
+
         Order saved = orderRepository.save(order);
+
+        decreaseStockForOrder(saved);
 
         return ResponseEntity.ok(new ResponseData<>(
                 AppException.SUCCESS.getCode(),
@@ -94,6 +101,7 @@ public class OrderService {
     public ResponseEntity<ResponseData<OrderDTO>> updateOrderStatus(Long id, UpdateOrderStatus request) {
         Order order = orderRepository.findById(id)
                 .orElseThrow(() -> new BusinessException(AppException.NOT_FOUND));
+
         order.setStatus(request.getStatus());
         Order updated = orderRepository.save(order);
 
@@ -101,6 +109,45 @@ public class OrderService {
                 AppException.SUCCESS.getCode(),
                 "Order status updated successfully",
                 OrderDTO.fromEntity(updated)
+        ));
+    }
+
+    public void reverseStockForOrder(Order order) {
+        for (CartItem item : order.getOrderItems()) {
+            Book book = item.getBook();
+            int quantity = item.getQuantity();
+            book.setStock(book.getStock() + quantity);
+            book.setSoldCount(book.getSoldCount() - quantity);
+            bookRepository.save(book);
+        }
+    }
+
+    public void decreaseStockForOrder(Order order) {
+        for (CartItem item : order.getOrderItems()) {
+            Book book = item.getBook();
+            int quantity = item.getQuantity();
+            if (book.getStock() < quantity) {
+                throw new BusinessException(AppException.OUT_OF_STOCK);
+            }
+            book.setStock(book.getStock() - quantity);
+            book.setSoldCount(book.getSoldCount() + quantity);
+            bookRepository.save(book);
+        }
+    }
+
+    public ResponseEntity<ResponseData<Void>> CancelOrder(Long id) {
+        Order order = orderRepository.findById(id)
+                .orElseThrow(() -> new BusinessException(AppException.NOT_FOUND));
+        if (order.getStatus() == OrderStatus.CONFIRMED) {
+            throw new BusinessException(AppException.CANNOT_CANCEL_ORDER);
+        }
+        reverseStockForOrder(order);
+        order.setStatus( OrderStatus.CANCELLED);
+        orderRepository.save(order);
+        return ResponseEntity.ok(new ResponseData<>(
+                AppException.SUCCESS.getCode(),
+                "Order cancelled successfully",
+                null
         ));
     }
 

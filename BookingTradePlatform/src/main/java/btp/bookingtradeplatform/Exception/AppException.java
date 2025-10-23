@@ -48,9 +48,18 @@ public enum AppException {
 
     // ========== Success request ==========
     SUCCESS("SUC_200", "Thành công", HttpStatus.OK),
-    CREATED("SUC_201", "Đã tạo", HttpStatus.CREATED), ;
+    CREATED("SUC_201", "Đã tạo", HttpStatus.CREATED),
+
+    CANNOT_CANCEL_ORDER("ORD_002", "Không thể huỷ đơn hàng đã được xử lý", HttpStatus.BAD_REQUEST),
 
 
+    // ========== Discount ==========
+    DISCOUNT_NOT_FOUND("DSC_001", "Không tìm thấy mã giảm giá", HttpStatus.NOT_FOUND),
+    DISCOUNT_INACTIVE_OR_EXPIRED("DSC_002", "Mã giảm giá không còn hiệu lực hoặc đã hết hạn", HttpStatus.BAD_REQUEST),
+    DISCOUNT_ALREADY_USED_BY_USER("DSC_003", "Người dùng đã sử dụng mã giảm giá này", HttpStatus.BAD_REQUEST),
+    DISCOUNT_ORDER_VALUE_TOO_LOW("DSC_004", "Giá trị đơn hàng không đủ điều kiện áp dụng mã giảm giá", HttpStatus.BAD_REQUEST),
+    DISCOUNT_USAGE_LIMIT_REACHED("DSC_005", "Mã giảm giá đã đạt giới hạn sử dụng", HttpStatus.BAD_REQUEST),
+    DISCOUNT_INVALID_PROVIDER("DSC_006", "Mã giảm giá không áp dụng cho nhà cung cấp này", HttpStatus.BAD_REQUEST);
 
     private final String code;
     private final String message;

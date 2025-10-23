@@ -21,7 +21,7 @@ public class OrderController {
 
     // Lấy tất cả đơn hàng
     @GetMapping("/all")
-    public ResponseEntity<ResponseData<List<Order>>> getAllOrders() {
+    public ResponseEntity<ResponseData<List<OrderDTO>>> getAllOrders() {
         return orderService.getAllOrders();
     }
 
@@ -47,5 +47,10 @@ public class OrderController {
     @GetMapping("/customer/{customerId}")
     public ResponseEntity<ResponseData<List<OrderDTO>>> getOrdersByCustomerId(@PathVariable Long customerId) {
         return orderService.getOrdersByCustomerId(customerId);
+    }
+
+    @PostMapping("/cancel/{id}")
+    public ResponseEntity<ResponseData<Void>> cancelOrder(@PathVariable Long id) {
+        return orderService.CancelOrder(id);
     }
 }

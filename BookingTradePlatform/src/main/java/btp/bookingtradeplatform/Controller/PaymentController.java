@@ -47,6 +47,12 @@ public class PaymentController {
         return paymentService.updatePaymentStatus(id, request);
     }
 
+    @PostMapping("/confirm/{id}")
+    public ResponseEntity<ResponseData<Void>> confirmPayment(
+            @PathVariable Long paymentId){
+        return paymentService.confirmPayment(paymentId);
+    }
+
     // ✅ Tạo thanh toán MoMo
     @PostMapping("/momo/create")
     public ResponseEntity<?> createMomoPayment(@RequestBody MomoPaymentRequest request) {
@@ -61,12 +67,6 @@ public class PaymentController {
     // ✅ Xử lý callback từ MoMo
     @PostMapping("/momo/callback")
     public ResponseEntity<String> handleMomoCallback(@RequestBody Map<String, Object> data) {
-        try {
-            String resultCode = String.valueOf(data.get("resultCode"));
-            String orderId = String.valueOf(data.get("orderId"));
-            return ResponseEntity.ok("Callback received for orderId: " + orderId + ", resultCode: " + resultCode);
-        } catch (Exception e) {
-            return ResponseEntity.internalServerError().body("Callback Error: " + e.getMessage());
-        }
+        return ResponseEntity.ok(momoService.handleCallback(data));
     }
 }

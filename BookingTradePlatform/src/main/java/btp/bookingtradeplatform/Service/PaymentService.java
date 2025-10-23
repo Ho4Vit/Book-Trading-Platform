@@ -7,6 +7,7 @@ import btp.bookingtradeplatform.Model.Entity.Book;
 import btp.bookingtradeplatform.Model.Entity.CartItem;
 import btp.bookingtradeplatform.Model.Entity.Order;
 import btp.bookingtradeplatform.Model.Entity.Payment;
+import btp.bookingtradeplatform.Model.Enum.OrderStatus;
 import btp.bookingtradeplatform.Model.Enum.PaymentStatus;
 import btp.bookingtradeplatform.Model.Request.CreatePaymentRequest;
 import btp.bookingtradeplatform.Model.Response.ResponseData;
@@ -27,7 +28,7 @@ import java.util.List;
 public class PaymentService {
 
     @Autowired
-    private BookRepository bookRepository;
+    private OrderService orderService;
 
     @Autowired
     private PaymentRepository paymentRepository;
@@ -71,18 +72,6 @@ public class PaymentService {
         payment.setMethod(request.getMethod());
         payment.setStatus(PaymentStatus.PENDING);
         payment.setPaymentDate(LocalDateTime.now());
-        payment.setDiscount(discount);
-
-        for (CartItem item : order.getOrderItems()) {
-            Book book = item.getBook();
-            int quantity = item.getQuantity();
-            if (book.getStock() < quantity) {
-                throw new BusinessException(AppException.OUT_OF_STOCK);
-            }
-            book.setStock(book.getStock() - quantity);
-            book.setSoldCount(book.getSoldCount() + quantity);
-            bookRepository.save(book);
-        }
 
         Payment savedPayment = paymentRepository.save(payment);
 
@@ -96,17 +85,29 @@ public class PaymentService {
     public ResponseEntity<ResponseData<PaymentDTO>> updatePaymentStatus(Long id, UpdatePaymentForm request) {
         Payment payment = paymentRepository.findById(id)
                 .orElseThrow(() -> new BusinessException(AppException.NOT_FOUND));
-
         payment.setStatus(request.getStatus());
-        payment.setDiscount(request.getDiscount() != null ? request.getDiscount() : BigDecimal.ZERO);
         payment.setMethod(request.getMethod() != null ? request.getMethod() : payment.getMethod());
-
         Payment updated = paymentRepository.save(payment);
 
         return ResponseEntity.ok(new ResponseData<>(
                 AppException.SUCCESS.getCode(),
                 "Payment status updated successfully",
                 PaymentDTO.fromEntity(updated)
+        ));
+    }
+
+    public ResponseEntity<ResponseData<Void>> confirmPayment(Long paymentId) {
+        Payment payment = paymentRepository.findById(paymentId)
+                .orElseThrow(() -> new BusinessException(AppException.NOT_FOUND));
+        Order order = payment.getOrder();
+        payment.setStatus(PaymentStatus.SUCCESS);
+        paymentRepository.save(payment);
+        order.setStatus(OrderStatus.CONFIRMED);
+        orderService.decreaseStockForOrder(order);
+        return ResponseEntity.ok(new ResponseData<>(
+                AppException.SUCCESS.getCode(),
+                "Payment confirmed successfully",
+                null
         ));
     }
 }
