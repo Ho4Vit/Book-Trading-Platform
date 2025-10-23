@@ -227,6 +227,49 @@ export default function CustomerOrders() {
                 </BreadcrumbList>
             </Breadcrumb>
 
+            {/* Summary Stats */}
+            {orders.length > 0 && (
+                <Card className="bg-gradient-to-br from-primary/5 to-purple-500/5">
+                    <CardContent className="pt-6">
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                            <div className="flex items-center gap-3">
+                                <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+                                    <ShoppingBag className="w-6 h-6 text-primary" />
+                                </div>
+                                <div>
+                                    <p className="text-sm text-muted-foreground">Tổng đơn hàng</p>
+                                    <p className="text-2xl font-bold">{orders.length}</p>
+                                </div>
+                            </div>
+                            <div className="flex items-center gap-3">
+                                <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center">
+                                    <CheckCircle2 className="w-6 h-6 text-green-600" />
+                                </div>
+                                <div>
+                                    <p className="text-sm text-muted-foreground">Đã giao</p>
+                                    <p className="text-2xl font-bold">{orderCounts.DELIVERED}</p>
+                                </div>
+                            </div>
+                            <div className="flex items-center gap-3">
+                                <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center">
+                                    <DollarSign className="w-6 h-6 text-blue-600" />
+                                </div>
+                                <div>
+                                    <p className="text-sm text-muted-foreground">Tổng chi tiêu</p>
+                                    <p className="text-2xl font-bold">
+                                        {orders
+                                            .filter((o) => o.status === "DELIVERED")
+                                            .reduce((acc, order) => acc + order.totalPrice, 0)
+                                            .toLocaleString("vi-VN")}
+                                        ₫
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
+            )}
+
             {/* Filters & Search */}
             <Card>
                 <CardContent className="pt-6">
@@ -467,48 +510,6 @@ export default function CustomerOrders() {
                 </TabsContent>
             </Tabs>
 
-            {/* Summary Stats */}
-            {orders.length > 0 && (
-                <Card className="bg-gradient-to-br from-primary/5 to-purple-500/5">
-                    <CardContent className="pt-6">
-                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                            <div className="flex items-center gap-3">
-                                <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
-                                    <ShoppingBag className="w-6 h-6 text-primary" />
-                                </div>
-                                <div>
-                                    <p className="text-sm text-muted-foreground">Tổng đơn hàng</p>
-                                    <p className="text-2xl font-bold">{orders.length}</p>
-                                </div>
-                            </div>
-                            <div className="flex items-center gap-3">
-                                <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center">
-                                    <CheckCircle2 className="w-6 h-6 text-green-600" />
-                                </div>
-                                <div>
-                                    <p className="text-sm text-muted-foreground">Đã giao</p>
-                                    <p className="text-2xl font-bold">{orderCounts.DELIVERED}</p>
-                                </div>
-                            </div>
-                            <div className="flex items-center gap-3">
-                                <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center">
-                                    <DollarSign className="w-6 h-6 text-blue-600" />
-                                </div>
-                                <div>
-                                    <p className="text-sm text-muted-foreground">Tổng chi tiêu</p>
-                                    <p className="text-2xl font-bold">
-                                        {orders
-                                            .filter((o) => o.status === "DELIVERED")
-                                            .reduce((acc, order) => acc + order.totalPrice, 0)
-                                            .toLocaleString("vi-VN")}
-                                        ₫
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-                    </CardContent>
-                </Card>
-            )}
 
             {/* Feedback Dialog */}
             <FeedbackDialog

@@ -6,4 +6,9 @@ export const customerApi = {
     getCustomerById: (id) => apiClient.get(`/v1/customers/getbyid/${id}`),
     getCustomerByEmail: (email) => apiClient.get(`/v1/customers/getbyemail`, { params: { email } }),
     getAllCustomers: () => apiClient.get(`/v1/customers/getall`),
+    updateAvatar: (id, data) => apiClient.post(`/v1/sellers/avartat/${id}`, data, {
+        headers: {
+            'Content-Type': 'multipart/form-data'
+        }
+    }, {skipSuccessToast: true}),
 };

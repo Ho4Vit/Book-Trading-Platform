@@ -9,7 +9,15 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { cartApi, orderApi, paymentApi, customerApi } from "@/api";
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog";
+import { Badge } from "@/components/ui/badge";
+import { cartApi, orderApi, paymentApi, customerApi, discountApi } from "@/api";
 import { useAuthStore } from "@/store/authStore";
 import useCustomQuery from "@/hooks/useCustomQuery";
 import useCustomMutation from "@/hooks/useCustomMutation";
@@ -30,6 +38,10 @@ import {
     AlertCircle,
     Wallet,
     Edit,
+    Ticket,
+    X,
+    Percent,
+    Tag,
 } from "lucide-react";
 
 export default function PaymentCheckout() {
@@ -40,6 +52,10 @@ export default function PaymentCheckout() {
 
     // Payment method state
     const [paymentMethod, setPaymentMethod] = useState("COD");
+
+    // Discount state
+    const [selectedDiscount, setSelectedDiscount] = useState(null);
+    const [showVoucherDialog, setShowVoucherDialog] = useState(false);
 
     // Shipping info state
     const [shippingInfo, setShippingInfo] = useState({
@@ -69,6 +85,20 @@ export default function PaymentCheckout() {
         }
     );
 
+    // Process cart data first to get totalPrice for discount query
+    const cartResponse = cartData?.data || cartData;
+    const cartItems = cartResponse?.cartItems || [];
+    const totalPrice = cartResponse?.totalPrice || 0;
+
+    // Fetch available discounts for user based on order value
+    const { data: discountsData, isLoading: discountsLoading } = useCustomQuery(
+        ["availableDiscounts", userId, totalPrice],
+        () => discountApi.getDiscountForUser(userId, totalPrice),
+        {
+            enabled: !!userId && totalPrice > 0,
+        }
+    );
+
     // Auto-fill customer information when data is loaded
     useEffect(() => {
         if (customerData) {
@@ -90,23 +120,50 @@ export default function PaymentCheckout() {
         (orderData) => orderApi.createOrder(orderData),
         null,
         {
-            onSuccess: (response) => {
+            onSuccess: async (response) => {
                 const order = response?.data || response;
 
-                // Clear cart
-                queryClient.invalidateQueries(["cart", userId]);
+                // Clear all items from cart
+                try {
+                    // Remove each item from cart
+                    const removePromises = cartItems.map(item =>
+                        cartApi.removeFromCart(userId, item.bookId)
+                    );
+                    await Promise.all(removePromises);
 
-                // Navigate based on payment method
+                    // Invalidate cart query to refresh the data
+                    queryClient.invalidateQueries(["cart", userId]);
+                } catch (error) {
+                    console.error("Error clearing cart:", error);
+                    // Continue with payment even if cart clearing fails
+                }
+
+                // Create payment based on payment method
                 if (paymentMethod === "MOMO") {
                     // Create MoMo payment
                     createMomoPayment(order);
                 } else {
-                    toast.success("Đặt hàng thành công!");
-                    navigate("/customer/orders");
+                    // Create COD payment
+                    createCODPayment(order);
                 }
             },
             onError: (error) => {
                 toast.error(error?.message || "Không thể tạo đơn hàng");
+            },
+        }
+    );
+
+    // Create COD payment mutation
+    const createCODPaymentMutation = useCustomMutation(
+        (paymentData) => paymentApi.createPayment(paymentData),
+        null,
+        {
+            onSuccess: () => {
+                toast.success("Đặt hàng thành công!");
+                navigate("/customer/orders");
+            },
+            onError: (error) => {
+                toast.error(error?.message || "Không thể tạo thanh toán");
             },
         }
     );
@@ -117,35 +174,106 @@ export default function PaymentCheckout() {
         null,
         {
             onSuccess: (response) => {
-                const payUrl = response?.data?.payUrl || response?.payUrl;
-                if (payUrl) {
-                    // Redirect to MoMo payment page
+                console.log("MoMo Response:", response);
+
+                const payUrl = response?.payUrl;
+                const resultCode = String(response?.resultCode || "");
+
+                // Check if payUrl exists and resultCode is success
+                if (payUrl && (resultCode === "0" || resultCode === "00")) {
+                    // Redirect to MoMo payment page (shows QR code)
                     window.location.href = payUrl;
                 } else {
-                    toast.error("Không thể tạo thanh toán MoMo");
+                    console.error("MoMo payment failed:", response);
+                    toast.error(response?.message || "Không thể tạo thanh toán MoMo");
                 }
             },
             onError: (error) => {
+                console.error("MoMo API Error:", error);
                 toast.error(error?.message || "Không thể tạo thanh toán MoMo");
             },
         }
     );
 
-    const createMomoPayment = (order) => {
-        createMomoMutation.mutate({
+    const createCODPayment = (order) => {
+        createCODPaymentMutation.mutate({
             orderId: order.id,
             amount: order.totalPrice,
+            method: "COD",
+            discount: discountAmount,
+        });
+    };
+
+    const createMomoPayment = (order) => {
+        createMomoMutation.mutate({
+            transactionId: order.transactionId,
+            orderId: order.id,
             orderInfo: `Thanh toán đơn hàng ${order.id}`,
+            discount: discountAmount,
             returnUrl: "http://localhost:5173/payment/success",
             notifyUrl: "http://localhost:8080/api/payments/momo/callback",
         });
     };
 
-    // Process cart data
-    const cartResponse = cartData?.data || cartData;
-    const cartItems = cartResponse?.cartItems || [];
-    const totalPrice = cartResponse?.totalPrice || 0;
     const cartCount = cartItems.reduce((acc, item) => acc + item.quantity, 0);
+
+    // Available discounts
+    const availableDiscounts = useMemo(() => {
+        const discounts = Array.isArray(discountsData?.data)
+            ? discountsData.data
+            : Array.isArray(discountsData)
+            ? discountsData
+            : [];
+
+        return discounts.filter(d => d.active && new Date(d.expiryDate) > new Date());
+    }, [discountsData]);
+
+    // Calculate discount amount
+    const discountAmount = useMemo(() => {
+        if (!selectedDiscount) return 0;
+
+        if (selectedDiscount.percentage) {
+            return (totalPrice * selectedDiscount.discountAmount) / 100;
+        } else {
+            return selectedDiscount.discountAmount;
+        }
+    }, [selectedDiscount, totalPrice]);
+
+    // Calculate final price after discount
+    const finalPrice = useMemo(() => {
+        return Math.max(0, totalPrice - discountAmount);
+    }, [totalPrice, discountAmount]);
+
+    // Find best discount (one that gives maximum discount)
+    const bestDiscount = useMemo(() => {
+        if (availableDiscounts.length === 0) return null;
+
+        return availableDiscounts.reduce((best, current) => {
+            const currentDiscount = current.percentage
+                ? (totalPrice * current.discountAmount) / 100
+                : current.discountAmount;
+
+            const bestCurrentDiscount = best.percentage
+                ? (totalPrice * best.discountAmount) / 100
+                : best.discountAmount;
+
+            return currentDiscount > bestCurrentDiscount ? current : best;
+        }, availableDiscounts[0]);
+    }, [availableDiscounts, totalPrice]);
+
+    // Save user use discount mutation
+    const saveUserUseDiscountMutation = useCustomMutation(
+        ({ discountId, userId }) => discountApi.saveUserUseDiscounts(discountId, userId),
+        null,
+        {
+            onSuccess: () => {
+                console.log("Discount usage saved successfully");
+            },
+            onError: (error) => {
+                console.error("Failed to save discount usage:", error);
+            },
+        }
+    );
 
     // Group items by seller
     const groupedBySeller = useMemo(() => {
@@ -187,6 +315,14 @@ export default function PaymentCheckout() {
             return;
         }
 
+        // Save discount usage if a discount was applied
+        if (selectedDiscount) {
+            saveUserUseDiscountMutation.mutate({
+                discountId: selectedDiscount.id,
+                userId: userId,
+            });
+        }
+
         // Prepare order data - matching API specification
         const orderData = {
             customerId: userId,
@@ -199,8 +335,19 @@ export default function PaymentCheckout() {
         createOrderMutation.mutate(orderData);
     };
 
+    const handleApplyDiscount = (discount) => {
+        setSelectedDiscount(discount);
+        setShowVoucherDialog(false);
+        toast.success(`Đã áp dụng voucher ${discount.code}`);
+    };
+
+    const handleRemoveDiscount = () => {
+        setSelectedDiscount(null);
+        toast.success("Đã gỡ voucher");
+    };
+
     const isLoading = cartLoading || customerLoading;
-    const isProcessing = createOrderMutation.isPending || createMomoMutation.isPending;
+    const isProcessing = createOrderMutation.isPending || createMomoMutation.isPending || createCODPaymentMutation.isPending;
 
     if (isLoading) {
         return (
@@ -500,13 +647,77 @@ export default function PaymentCheckout() {
                                                 Miễn phí
                                             </span>
                                         </div>
+
+                                        {/* Voucher Section */}
+                                        {availableDiscounts.length > 0 && (
+                                            <>
+                                                <Separator />
+                                                <div className="space-y-2">
+                                                    <div className="flex items-center justify-between">
+                                                        <span className="text-sm font-medium flex items-center gap-2">
+                                                            <Ticket className="w-4 h-4 text-primary" />
+                                                            Voucher giảm giá
+                                                        </span>
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="sm"
+                                                            className="h-7 text-xs gap-1"
+                                                            onClick={() => setShowVoucherDialog(true)}
+                                                        >
+                                                            <Tag className="w-3 h-3" />
+                                                            Chọn voucher
+                                                        </Button>
+                                                    </div>
+
+                                                    {selectedDiscount ? (
+                                                        <div className="p-3 bg-gradient-to-r from-primary/5 to-purple-500/5 border border-primary/20 rounded-lg">
+                                                            <div className="flex items-center justify-between mb-1">
+                                                                <div className="flex items-center gap-2">
+                                                                    <Badge className="bg-gradient-to-r from-primary to-purple-600 text-white">
+                                                                        {selectedDiscount.code}
+                                                                    </Badge>
+                                                                </div>
+                                                                <Button
+                                                                    variant="ghost"
+                                                                    size="icon"
+                                                                    className="h-6 w-6"
+                                                                    onClick={handleRemoveDiscount}
+                                                                >
+                                                                    <X className="w-4 h-4" />
+                                                                </Button>
+                                                            </div>
+                                                            <div className="flex items-center justify-between text-sm">
+                                                                <span className="text-muted-foreground">Giảm giá:</span>
+                                                                <span className="font-semibold text-green-600">
+                                                                    -{discountAmount.toLocaleString("vi-VN")}₫
+                                                                </span>
+                                                            </div>
+                                                        </div>
+                                                    ) : bestDiscount && (
+                                                        <Alert className="bg-amber-50 border-amber-200 p-3">
+                                                            <AlertCircle className="h-4 w-4 text-amber-600" />
+                                                            <AlertDescription className="text-xs text-amber-800">
+                                                                <strong>Gợi ý:</strong> Sử dụng voucher <strong>{bestDiscount.code}</strong> để giảm{" "}
+                                                                {bestDiscount.percentage ? `${bestDiscount.discountAmount}%` : `${bestDiscount.discountAmount.toLocaleString("vi-VN")}₫`}
+                                                            </AlertDescription>
+                                                        </Alert>
+                                                    )}
+                                                </div>
+                                            </>
+                                        )}
+
                                         <Separator />
                                         <div className="flex items-center justify-between">
                                             <span className="text-lg font-semibold">Tổng cộng</span>
                                             <span className="text-2xl font-bold text-primary">
-                                                {totalPrice.toLocaleString("vi-VN")}₫
+                                                {finalPrice.toLocaleString("vi-VN")}₫
                                             </span>
                                         </div>
+                                        {discountAmount > 0 && (
+                                            <div className="text-xs text-muted-foreground text-right">
+                                                Tiết kiệm: {discountAmount.toLocaleString("vi-VN")}₫
+                                            </div>
+                                        )}
                                     </div>
 
                                     <Separator />
@@ -568,6 +779,117 @@ export default function PaymentCheckout() {
                     </div>
                 </div>
             </div>
+
+            {/* Voucher Selection Dialog */}
+            <Dialog open={showVoucherDialog} onOpenChange={setShowVoucherDialog}>
+                <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2">
+                            <Ticket className="w-5 h-5 text-primary" />
+                            Chọn Voucher Giảm Giá
+                        </DialogTitle>
+                        <DialogDescription>
+                            Chọn voucher phù hợp để giảm giá đơn hàng của bạn
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    {discountsLoading ? (
+                        <div className="space-y-3">
+                            {[...Array(3)].map((_, i) => (
+                                <Skeleton key={i} className="h-24 w-full" />
+                            ))}
+                        </div>
+                    ) : availableDiscounts.length === 0 ? (
+                        <div className="text-center py-8">
+                            <Ticket className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
+                            <p className="text-muted-foreground">
+                                Không có voucher khả dụng cho đơn hàng này
+                            </p>
+                        </div>
+                    ) : (
+                        <div className="space-y-3">
+                            {availableDiscounts.map((discount) => {
+                                const discountValue = discount.percentage
+                                    ? (totalPrice * discount.discountAmount) / 100
+                                    : discount.discountAmount;
+                                const isSelected = selectedDiscount?.id === discount.id;
+                                const isBest = bestDiscount?.id === discount.id;
+
+                                return (
+                                    <Card
+                                        key={discount.id}
+                                        className={`cursor-pointer transition-all hover:shadow-md ${
+                                            isSelected
+                                                ? "border-2 border-primary bg-primary/5"
+                                                : "border hover:border-primary/50"
+                                        }`}
+                                        onClick={() => handleApplyDiscount(discount)}
+                                    >
+                                        <CardContent className="p-4">
+                                            <div className="flex items-start gap-3">
+                                                <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-primary to-purple-600 flex items-center justify-center flex-shrink-0">
+                                                    <Ticket className="w-6 h-6 text-white" />
+                                                </div>
+                                                <div className="flex-1 min-w-0">
+                                                    <div className="flex items-start justify-between mb-2">
+                                                        <div>
+                                                            <div className="flex items-center gap-2 mb-1">
+                                                                <span className="font-bold text-lg">
+                                                                    {discount.code}
+                                                                </span>
+                                                                {isBest && (
+                                                                    <Badge className="bg-amber-500 hover:bg-amber-600">
+                                                                        Tốt nhất
+                                                                    </Badge>
+                                                                )}
+                                                            </div>
+                                                            <p className="text-xs text-muted-foreground">
+                                                                {discount.provider}
+                                                            </p>
+                                                        </div>
+                                                        {isSelected && (
+                                                            <CheckCircle2 className="w-6 h-6 text-primary" />
+                                                        )}
+                                                    </div>
+
+                                                    <div className="flex items-center gap-2 mb-2">
+                                                        {discount.percentage ? (
+                                                            <span className="text-primary font-bold text-xl flex items-center gap-1">
+                                                                <Percent className="w-4 h-4" />
+                                                                {discount.discountAmount}%
+                                                            </span>
+                                                        ) : (
+                                                            <span className="text-primary font-bold text-xl">
+                                                                -{discount.discountAmount.toLocaleString("vi-VN")}₫
+                                                            </span>
+                                                        )}
+                                                    </div>
+
+                                                    <div className="space-y-1 text-xs text-muted-foreground">
+                                                        {discount.minOrderValue > 0 && (
+                                                            <p>
+                                                                • Đơn tối thiểu:{" "}
+                                                                {discount.minOrderValue.toLocaleString("vi-VN")}₫
+                                                            </p>
+                                                        )}
+                                                        <p>
+                                                            • HSD:{" "}
+                                                            {new Date(discount.expiryDate).toLocaleDateString("vi-VN")}
+                                                        </p>
+                                                        <p className="font-semibold text-green-600">
+                                                            → Tiết kiệm: {discountValue.toLocaleString("vi-VN")}₫
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </CardContent>
+                                    </Card>
+                                );
+                            })}
+                        </div>
+                    )}
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }

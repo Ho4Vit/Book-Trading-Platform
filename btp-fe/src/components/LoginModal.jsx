@@ -55,15 +55,16 @@ const LoginModal = ({ onClose }) => {
 		"POST",
 		{
 			onSuccess: (res) => {
-				if (res?.token) {
+                const respone = res.data || res;
+				if (respone?.token) {
 					login({
-						token: res.token,
-						role: res.role,
-						userId: res.userId,
+						token: respone.token,
+						role: respone.role,
+						userId: respone.userId,
 					});
 					toast.success("Đăng nhập thành công 🎉");
 
-					switch (res.role) {
+					switch (respone.role) {
 						case "CUSTOMER":
 							navigate("/");
 							break;

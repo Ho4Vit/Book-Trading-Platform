@@ -63,7 +63,7 @@ export const apiClient = {
             if (config.skipSuccessToast !== true) {
                 toast.success("Thao tác thành công!");
             }
-            return response.data;
+            return response;
         } catch (error) {
             handleError(error);
         }

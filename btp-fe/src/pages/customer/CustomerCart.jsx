@@ -282,7 +282,7 @@ export default function CustomerCart() {
                                     </div>
                                     <h3 className="text-2xl font-bold mb-2">Giỏ hàng trống</h3>
                                     <p className="text-muted-foreground mb-6 max-w-md">
-                                        Bạn chưa có sản phẩm nào trong giỏ hàng. Hãy khám phá và thêm những cuốn sách yêu thích c���a bạn!
+                                        Bạn chưa có sản phẩm nào trong giỏ hàng. Hãy khám phá và thêm những cuốn sách yêu thích của bạn!
                                     </p>
                                     <Button size="lg" className="gap-2" onClick={() => navigate("/")}>
                                         <ShoppingBag className="w-5 h-5" />

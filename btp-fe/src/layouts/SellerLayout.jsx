@@ -24,6 +24,8 @@ import {
     BarChart3,
     Menu,
     X,
+    Ticket,
+    MessageSquare,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import Footer from "@/components/Footer";
@@ -58,6 +60,8 @@ export default function SellerLayout() {
         { path: "/seller/books", icon: BookOpen, label: "Quản lý sách" },
         { path: "/seller/orders", icon: ShoppingCart, label: "Đơn hàng" },
         { path: "/seller/inventory", icon: Package, label: "Tồn kho" },
+        { path: "/seller/vouchers", icon: Ticket, label: "Voucher" },
+        { path: "/seller/feedbacks", icon: MessageSquare, label: "Đánh giá" },
         { path: "/seller/profile", icon: User, label: "Hồ sơ" },
     ];
 
