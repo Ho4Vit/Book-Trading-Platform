@@ -96,3 +96,11 @@
     @apply bg-background text-foreground;
     }
 }
+.rdp {
+    position: relative !important;
+    z-index: 9999 !important;
+    background: white;
+    border-radius: 0.5rem;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+    isolation: isolate; /* <-- thêm dòng này */
+}

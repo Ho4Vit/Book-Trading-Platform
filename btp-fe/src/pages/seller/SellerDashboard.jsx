@@ -21,6 +21,7 @@ import {
     DollarSign,
     AlertCircle,
     Plus,
+    MessageSquare, Ticket,
 } from "lucide-react";
 
 export default function SellerDashboard() {
@@ -36,13 +37,23 @@ export default function SellerDashboard() {
         }
     );
 
-    // Fetch all orders and filter by seller's books
-    const { data: allOrders, isLoading: ordersLoading } = useCustomQuery(
-        ["seller-orders"],
-        orderApi.getAllOrders
+    // Fetch seller's orders directly
+    const { data: ordersData, isLoading: ordersLoading } = useCustomQuery(
+        ["seller-orders", userId],
+        () => orderApi.getOrderBySellerId(userId),
+        {
+            enabled: !!userId,
+        }
     );
 
     const isLoading = booksLoading || ordersLoading;
+
+    // Parse seller orders from API response
+    const sellerOrders = Array.isArray(ordersData?.data)
+        ? ordersData.data
+        : Array.isArray(ordersData)
+        ? ordersData
+        : [];
 
     // Calculate statistics
     const totalBooks = sellerBooks?.length || 0;
@@ -55,27 +66,9 @@ export default function SellerDashboard() {
         sellerBooks?.filter((book) => (book.quantity || book.stock || 0) < 5)
             ?.length || 0;
 
-    // Calculate revenue from orders
-    const sellerOrders =
-        allOrders?.filter((order) =>
-            order.items?.some(
-                (item) =>
-                    sellerBooks.some((book) => book.bookId === item.bookId)
-            )
-        ) || [];
-
+    // Calculate total revenue from orders using totalPrice from response
     const totalRevenue = sellerOrders.reduce((sum, order) => {
-        const sellerItems =
-            order.items?.filter((item) =>
-                sellerBooks.some((book) => book.bookId === item.bookId)
-            ) || [];
-        return (
-            sum +
-            sellerItems.reduce(
-                (itemSum, item) => itemSum + item.price * item.quantity,
-                0
-            )
-        );
+        return sum + (order.totalPrice || 0);
     }, 0);
 
     const stats = [
@@ -117,8 +110,10 @@ export default function SellerDashboard() {
         },
     ];
 
-    // Recent orders
-    const recentOrders = sellerOrders.slice(0, 5);
+    // Recent orders - sorted by orderDate (newest first)
+    const recentOrders = [...sellerOrders]
+        .sort((a, b) => new Date(b.orderDate) - new Date(a.orderDate))
+        .slice(0, 5);
 
     return (
         <div className="space-y-6">
@@ -227,7 +222,7 @@ export default function SellerDashboard() {
                             <div className="space-y-3">
                                 {recentOrders.map((order) => (
                                     <div
-                                        key={order.orderId}
+                                        key={order.id}
                                         className="flex items-center justify-between p-3 rounded-lg border hover:bg-muted/50 transition-colors"
                                     >
                                         <div className="flex items-center gap-3">
@@ -236,7 +231,7 @@ export default function SellerDashboard() {
                                             </div>
                                             <div>
                                                 <p className="text-sm font-medium">
-                                                    Đơn hàng #{order.orderId}
+                                                    Đơn hàng #{order.id}
                                                 </p>
                                                 <p className="text-xs text-muted-foreground">
                                                     {order.status || "Đang xử lý"}
@@ -245,10 +240,10 @@ export default function SellerDashboard() {
                                         </div>
                                         <div className="text-right">
                                             <p className="text-sm font-medium">
-                                                {order.totalAmount?.toLocaleString("vi-VN")}đ
+                                                {order.totalPrice?.toLocaleString("vi-VN")}đ
                                             </p>
                                             <p className="text-xs text-muted-foreground">
-                                                {new Date(order.createdAt).toLocaleDateString("vi-VN")}
+                                                {new Date(order.orderDate).toLocaleDateString("vi-VN")}
                                             </p>
                                         </div>
                                     </div>
@@ -293,6 +288,22 @@ export default function SellerDashboard() {
                         >
                             <Package className="h-4 w-4" />
                             Quản lý tồn kho
+                        </Button>
+                        <Button
+                            className="w-full justify-start gap-2"
+                            variant="outline"
+                            onClick={() => navigate("/seller/vouchers")}
+                        >
+                            <Ticket className="h-4 w-4" />
+                            Thêm Voucher
+                        </Button>
+                        <Button
+                            className="w-full justify-start gap-2"
+                            variant="outline"
+                            onClick={() => navigate("/seller/feedbacks")}
+                        >
+                            <MessageSquare className="h-4 w-4" />
+                            Xem đánh giá
                         </Button>
                         <Button
                             className="w-full justify-start gap-2"

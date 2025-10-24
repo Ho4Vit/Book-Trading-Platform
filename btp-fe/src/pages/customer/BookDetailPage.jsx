@@ -87,7 +87,7 @@ const BookDetailPage = () => {
         }
     );
 
-    const averageRating = ratingData?.data?.averageRating || ratingData || 0;
+    const averageRating = ratingData?.data?.averageRating || ratingData?.averageRating || 0;
     const ratingCount = ratingData?.data?.count || ratingData?.count || 0;
 
     // Fetch all books for related books section

@@ -123,7 +123,7 @@ export default function SellerFeedbacks() {
 
             return {
                 ...feedback,
-                bookName: book?.name || 'Sách không xác định',
+                bookName: book?.title || 'Sách không xác định',
                 bookImage: book?.imgUrl,
             };
         });

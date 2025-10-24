@@ -38,6 +38,7 @@ import { BookOpen, Plus, Edit, Trash2, Search, ArrowUpDown, X } from "lucide-rea
 import toast from "react-hot-toast";
 import { useAuthStore } from "@/store/authStore";
 import BookImageUpload from "@/components/BookImageUpload";
+import BookRating from "@/components/BookRating";
 
 export default function SellerBooks() {
     const { userId } = useAuthStore();
@@ -366,6 +367,7 @@ export default function SellerBooks() {
                                     >
                                         Kho: {book.stock}
                                     </Badge>
+                                    <BookRating bookId={book.id} />
                                     {seriesName && (
                                         <Badge
                                             className="absolute top-2 left-2 bg-purple-500 text-white"

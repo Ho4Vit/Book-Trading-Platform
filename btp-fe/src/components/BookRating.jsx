@@ -22,7 +22,7 @@ const BookRating = ({ bookId, className = "" }) => {
 		}
 	);
 
-	const averageRating = ratingData?.data?.averageRating || ratingData || 0;
+	const averageRating = ratingData?.averageRating || 0;
 
 	// Don't render if there's no rating
 	if (!averageRating || averageRating === 0) return null;

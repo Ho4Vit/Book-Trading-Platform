@@ -66,6 +66,33 @@ export default function PaymentCheckout() {
         note: "",
     });
 
+    // Load selected items and applied discount from sessionStorage
+    const [selectedCartItems, setSelectedCartItems] = useState([]);
+
+    useEffect(() => {
+        // Load selected items from sessionStorage (set by CustomerCart)
+        const storedItems = sessionStorage.getItem('selectedCartItems');
+        const storedDiscount = sessionStorage.getItem('appliedDiscount');
+
+        if (storedItems) {
+            try {
+                const items = JSON.parse(storedItems);
+                setSelectedCartItems(items);
+            } catch (error) {
+                console.error("Error parsing selected items:", error);
+            }
+        }
+
+        if (storedDiscount) {
+            try {
+                const discount = JSON.parse(storedDiscount);
+                setSelectedDiscount(discount);
+            } catch (error) {
+                console.error("Error parsing discount:", error);
+            }
+        }
+    }, []);
+
     // Fetch cart data
     const { data: cartData, isLoading: cartLoading } = useCustomQuery(
         ["cart", userId],
@@ -87,8 +114,11 @@ export default function PaymentCheckout() {
 
     // Process cart data first to get totalPrice for discount query
     const cartResponse = cartData?.data || cartData;
-    const cartItems = cartResponse?.cartItems || [];
-    const totalPrice = cartResponse?.totalPrice || 0;
+    const allCartItems = cartResponse?.cartItems || [];
+
+    // Use selected items from sessionStorage if available, otherwise use all cart items
+    const cartItems = selectedCartItems.length > 0 ? selectedCartItems : allCartItems;
+    const totalPrice = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
 
     // Fetch available discounts for user based on order value
     const { data: discountsData, isLoading: discountsLoading } = useCustomQuery(
@@ -123,7 +153,22 @@ export default function PaymentCheckout() {
             onSuccess: async (response) => {
                 const order = response?.data || response;
 
-                // Clear all items from cart
+                // Save discount usage if a discount was applied
+                if (selectedDiscount) {
+                    try {
+                        await discountApi.saveUserUseDiscounts(selectedDiscount.id, userId);
+                        console.log("Discount usage saved successfully");
+                    } catch (error) {
+                        console.error("Failed to save discount usage:", error);
+                        // Continue with order even if discount saving fails
+                    }
+                }
+
+                // Clear sessionStorage after order is created
+                sessionStorage.removeItem('selectedCartItems');
+                sessionStorage.removeItem('appliedDiscount');
+
+                // Clear selected items from cart (only the ones that were ordered)
                 try {
                     // Remove each item from cart
                     const removePromises = cartItems.map(item =>
@@ -228,16 +273,25 @@ export default function PaymentCheckout() {
         return discounts.filter(d => d.active && new Date(d.expiryDate) > new Date());
     }, [discountsData]);
 
-    // Calculate discount amount
+    // Calculate discount amount based on applicable books
     const discountAmount = useMemo(() => {
         if (!selectedDiscount) return 0;
 
+        // Filter cart items that the discount applies to
+        const applicableItems = cartItems.filter(item =>
+            selectedDiscount.applicableBookIds?.includes(item.bookId)
+        );
+
+        const applicableTotal = applicableItems.reduce((sum, item) =>
+            sum + (item.price * item.quantity), 0
+        );
+
         if (selectedDiscount.percentage) {
-            return (totalPrice * selectedDiscount.discountAmount) / 100;
+            return Math.round((applicableTotal * selectedDiscount.discountAmount) / 100);
         } else {
-            return selectedDiscount.discountAmount;
+            return Math.min(selectedDiscount.discountAmount, applicableTotal);
         }
-    }, [selectedDiscount, totalPrice]);
+    }, [selectedDiscount, cartItems]);
 
     // Calculate final price after discount
     const finalPrice = useMemo(() => {
@@ -260,20 +314,6 @@ export default function PaymentCheckout() {
             return currentDiscount > bestCurrentDiscount ? current : best;
         }, availableDiscounts[0]);
     }, [availableDiscounts, totalPrice]);
-
-    // Save user use discount mutation
-    const saveUserUseDiscountMutation = useCustomMutation(
-        ({ discountId, userId }) => discountApi.saveUserUseDiscounts(discountId, userId),
-        null,
-        {
-            onSuccess: () => {
-                console.log("Discount usage saved successfully");
-            },
-            onError: (error) => {
-                console.error("Failed to save discount usage:", error);
-            },
-        }
-    );
 
     // Group items by seller
     const groupedBySeller = useMemo(() => {
@@ -315,13 +355,6 @@ export default function PaymentCheckout() {
             return;
         }
 
-        // Save discount usage if a discount was applied
-        if (selectedDiscount) {
-            saveUserUseDiscountMutation.mutate({
-                discountId: selectedDiscount.id,
-                userId: userId,
-            });
-        }
 
         // Prepare order data - matching API specification
         const orderData = {

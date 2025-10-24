@@ -26,7 +26,7 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { discountApi, sellerApi } from "@/api";
+import { discountApi, sellerApi, bookApi } from "@/api";
 import { useAuthStore } from "@/store/authStore";
 import useCustomQuery from "@/hooks/useCustomQuery";
 import useCustomMutation from "@/hooks/useCustomMutation";
@@ -36,14 +36,17 @@ import {
     Ticket,
     Plus,
     Trash2,
-    Calendar,
     DollarSign,
     Percent,
     Search,
     AlertCircle,
     Tag,
+    Calendar as CalendarIcon, Loader2
 } from "lucide-react";
 import { format } from "date-fns";
+import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover"
+import { Calendar } from "@/components/ui/Calendar";
+import { vi } from "date-fns/locale"
 
 export default function SellerVouchers() {
     const { userId } = useAuthStore();
@@ -72,6 +75,15 @@ export default function SellerVouchers() {
         }
     );
 
+    // Fetch seller's books
+    const { data: booksData, isLoading: booksLoading } = useCustomQuery(
+        ["sellerBooks", userId],
+        () => bookApi.getBookBySeller(userId),
+        {
+            enabled: !!userId,
+        }
+    );
+
     // Fetch all discounts
     const { data: discountsData, isLoading: discountsLoading } = useCustomQuery(
         ["discounts"],
@@ -82,9 +94,16 @@ export default function SellerVouchers() {
     );
 
     const seller = sellerData?.data || sellerData;
-    const storeName = seller?.storeName;
 
-    // Filter discounts by store name
+    // Get seller's book IDs
+    const sellerBooks = Array.isArray(booksData?.data)
+        ? booksData.data
+        : Array.isArray(booksData)
+        ? booksData
+        : [];
+    const sellerBookIds = sellerBooks.map((book) => book.id);
+
+    // Filter discounts by applicable book IDs (show vouchers applicable to seller's books)
     const storeDiscounts = useMemo(() => {
         const allDiscounts = Array.isArray(discountsData?.data)
             ? discountsData.data
@@ -92,8 +111,13 @@ export default function SellerVouchers() {
             ? discountsData
             : [];
 
-        return allDiscounts.filter((discount) => discount.provider === storeName);
-    }, [discountsData, storeName]);
+        // Filter vouchers that have at least one book ID matching seller's books
+        return allDiscounts.filter((discount) => {
+            const applicableIds = discount.applicableBookIds || [];
+            // Check if any of seller's book IDs are in the applicable book IDs
+            return sellerBookIds.some((bookId) => applicableIds.includes(bookId));
+        });
+    }, [discountsData, sellerBookIds]);
 
     // Search filter
     const filteredDiscounts = useMemo(() => {
@@ -167,16 +191,22 @@ export default function SellerVouchers() {
             toast.error("Vui lòng chọn ngày hết hạn");
             return;
         }
+        if (sellerBookIds.length === 0) {
+            toast.error("Bạn cần có ít nhất một sản phẩm để tạo voucher");
+            return;
+        }
 
         const discountData = {
             code: formData.code.toUpperCase(),
             discountAmount: parseFloat(formData.discountAmount),
             percentage: formData.percentage,
             minOrderValue: formData.minOrderValue ? parseFloat(formData.minOrderValue) : 0,
+            createdAt: new Date().toISOString(),
             expiryDate: new Date(formData.expiryDate).toISOString(),
             active: formData.active,
-            provider: storeName,
+            provider: "STORE", // Use STORE enum for seller vouchers
             providedUserIds: [],
+            applicableBookIds: sellerBookIds, // Add all seller's book IDs
         };
 
         createDiscountMutation.mutate(discountData);
@@ -202,11 +232,22 @@ export default function SellerVouchers() {
         }
     };
 
+    // --- Thêm helper format tiền ---
+    const formatVND = (value) => {
+        if (!value) return "";
+        return new Intl.NumberFormat("vi-VN").format(value);
+    };
+
+    const parseVND = (value) => {
+        if (!value) return 0;
+        return parseInt(value.replace(/\./g, ""), 10) || 0;
+    };
+
     const isExpired = (expiryDate) => {
         return new Date(expiryDate) < new Date();
     };
 
-    if (sellerLoading || discountsLoading) {
+    if (sellerLoading || booksLoading || discountsLoading) {
         return (
             <div className="w-full space-y-6">
                 <Skeleton className="h-12 w-full" />
@@ -249,7 +290,9 @@ export default function SellerVouchers() {
                                 Tạo voucher giảm giá cho khách hàng của bạn
                             </DialogDescription>
                         </DialogHeader>
-                        <div className="space-y-4">
+
+                        <div className="space-y-5 py-2">
+                            {/* Code */}
                             <div className="space-y-2">
                                 <Label htmlFor="code">
                                     Mã Voucher <span className="text-red-500">*</span>
@@ -258,27 +301,31 @@ export default function SellerVouchers() {
                                     id="code"
                                     placeholder="VD: SUMMER2025"
                                     value={formData.code}
-                                    onChange={(e) => handleInputChange("code", e.target.value.toUpperCase())}
+                                    onChange={(e) =>
+                                        handleInputChange("code", e.target.value.toUpperCase())
+                                    }
                                 />
                             </div>
 
+                            {/* Type of discount */}
                             <div className="space-y-2">
                                 <Label>Loại giảm giá</Label>
-                                <div className="flex items-center gap-4">
-                                    <div className="flex items-center gap-2">
-                                        <Switch
-                                            checked={formData.percentage}
-                                            onCheckedChange={(checked) =>
-                                                handleInputChange("percentage", checked)
-                                            }
-                                        />
-                                        <Label className="cursor-pointer">
-                                            {formData.percentage ? "Phần trăm (%)" : "Số tiền cố định (₫)"}
-                                        </Label>
-                                    </div>
+                                <div className="flex items-center gap-3">
+                                    <Switch
+                                        checked={formData.percentage}
+                                        onCheckedChange={(checked) =>
+                                            handleInputChange("percentage", checked)
+                                        }
+                                    />
+                                    <Label className="cursor-pointer">
+                                        {formData.percentage
+                                            ? "Phần trăm (%)"
+                                            : "Số tiền cố định (₫)"}
+                                    </Label>
                                 </div>
                             </div>
 
+                            {/* Discount value */}
                             <div className="space-y-2">
                                 <Label htmlFor="discountAmount">
                                     Giá trị giảm {formData.percentage ? "(%)" : "(₫)"}{" "}
@@ -286,56 +333,97 @@ export default function SellerVouchers() {
                                 </Label>
                                 <Input
                                     id="discountAmount"
-                                    type="number"
-                                    placeholder={formData.percentage ? "VD: 10" : "VD: 50000"}
-                                    value={formData.discountAmount}
-                                    onChange={(e) =>
-                                        handleInputChange("discountAmount", e.target.value)
+                                    type="text"
+                                    placeholder={formData.percentage ? "VD: 10" : "VD: 50.000"}
+                                    value={
+                                        formData.percentage
+                                            ? formData.discountAmount
+                                            : formatVND(formData.discountAmount)
                                     }
+                                    onChange={(e) => {
+                                        const rawValue = e.target.value;
+                                        const parsedValue = formData.percentage
+                                            ? rawValue
+                                            : parseVND(rawValue);
+                                        handleInputChange("discountAmount", parsedValue);
+                                    }}
                                     min="0"
                                     max={formData.percentage ? "100" : undefined}
                                 />
                             </div>
 
+                            {/* Minimum order */}
                             <div className="space-y-2">
                                 <Label htmlFor="minOrderValue">Giá trị đơn hàng tối thiểu (₫)</Label>
                                 <Input
                                     id="minOrderValue"
-                                    type="number"
-                                    placeholder="VD: 100000"
-                                    value={formData.minOrderValue}
-                                    onChange={(e) =>
-                                        handleInputChange("minOrderValue", e.target.value)
-                                    }
-                                    min="0"
+                                    type="text"
+                                    placeholder="VD: 100.000"
+                                    value={formatVND(formData.minOrderValue)}
+                                    onChange={(e) => {
+                                        const parsedValue = parseVND(e.target.value);
+                                        handleInputChange("minOrderValue", parsedValue);
+                                    }}
                                 />
                             </div>
 
+                            {/* Expiry date with Calendar */}
                             <div className="space-y-2">
                                 <Label htmlFor="expiryDate">
                                     Ngày hết hạn <span className="text-red-500">*</span>
                                 </Label>
-                                <Input
-                                    id="expiryDate"
-                                    type="date"
-                                    value={formData.expiryDate}
-                                    onChange={(e) => handleInputChange("expiryDate", e.target.value)}
-                                    min={new Date().toISOString().split("T")[0]}
-                                />
+                                <Popover>
+                                    <PopoverTrigger asChild>
+                                        <Button
+                                            variant="outline"
+                                            className={`w-full justify-start text-left font-normal ${
+                                                !formData.expiryDate && "text-muted-foreground"
+                                            }`}
+                                        >
+                                            <CalendarIcon className="mr-2 h-4 w-4" />
+                                            {formData.expiryDate
+                                                ? format(new Date(formData.expiryDate), "dd/MM/yyyy", {
+                                                    locale: vi,
+                                                })
+                                                : "Chọn ngày hết hạn"}
+                                        </Button>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="p-0" align="start">
+                                        <Calendar
+                                            mode="single"
+                                            selected={
+                                                formData.expiryDate
+                                                    ? new Date(formData.expiryDate)
+                                                    : undefined
+                                            }
+                                            onSelect={(date) =>
+                                                handleInputChange(
+                                                    "expiryDate",
+                                                    date ? date.toISOString() : ""
+                                                )
+                                            }
+                                            disabled={(date) => date < new Date()}
+                                        />
+                                    </PopoverContent>
+                                </Popover>
                             </div>
 
-                            <div className="flex items-center gap-2">
+                            {/* Active switch */}
+                            <div className="flex items-center gap-2 pt-2">
                                 <Switch
                                     id="active"
                                     checked={formData.active}
-                                    onCheckedChange={(checked) => handleInputChange("active", checked)}
+                                    onCheckedChange={(checked) =>
+                                        handleInputChange("active", checked)
+                                    }
                                 />
                                 <Label htmlFor="active" className="cursor-pointer">
                                     Kích hoạt ngay
                                 </Label>
                             </div>
                         </div>
-                        <DialogFooter>
+
+                        <DialogFooter className="pt-4">
                             <Button
                                 variant="outline"
                                 onClick={() => {
@@ -348,7 +436,11 @@ export default function SellerVouchers() {
                             <Button
                                 onClick={handleCreateDiscount}
                                 disabled={createDiscountMutation.isPending}
+                                className="gap-2"
                             >
+                                {createDiscountMutation.isPending && (
+                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                )}
                                 {createDiscountMutation.isPending ? "Đang tạo..." : "Tạo Voucher"}
                             </Button>
                         </DialogFooter>
@@ -448,7 +540,7 @@ export default function SellerVouchers() {
                         return (
                             <Card
                                 key={discount.id}
-                                className={`relative overflow-hidden ${
+                                className={`relative overflow-visible ${
                                     isActive
                                         ? "border-primary/50"
                                         : "border-muted opacity-75"
@@ -516,7 +608,7 @@ export default function SellerVouchers() {
                                         )}
                                         <div className="flex items-center justify-between">
                                             <span className="text-muted-foreground flex items-center gap-1">
-                                                <Calendar className="w-3 h-3" />
+                                                <CalendarIcon className="w-3 h-3" />
                                                 Hết hạn:
                                             </span>
                                             <span className={expired ? "text-red-600 font-semibold" : "font-semibold"}>

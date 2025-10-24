@@ -15,11 +15,12 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { ShoppingCart, X, ShoppingBag } from "lucide-react";
-import { cartApi } from "@/api/cartApi";
+import { ShoppingCart, X, ShoppingBag, Sparkles, Tag } from "lucide-react";
+import { cartApi, discountApi } from "@/api";
 import { useAuthStore } from "@/store/authStore";
 import useCustomQuery from "@/hooks/useCustomQuery";
 import useCustomMutation from "@/hooks/useCustomMutation";
+import { findApplicableDiscount, calculateDiscountedPrice } from "@/utils/discountUtils";
 import toast from "react-hot-toast";
 import { AnimatePresence, motion } from "framer-motion";
 import { useQueryClient } from "@tanstack/react-query";
@@ -43,6 +44,16 @@ export default function CartPopover() {
         {
             enabled: !!userId && isCustomer, // Only fetch if user is a customer
             refetchOnWindowFocus: true,
+        }
+    );
+
+    // Fetch all discounts
+    const { data: discountsData } = useCustomQuery(
+        ["discounts"],
+        () => discountApi.getAllDiscounts(),
+        {
+            enabled: isCustomer,
+            staleTime: 1000 * 60 * 5
         }
     );
 
@@ -82,8 +93,33 @@ export default function CartPopover() {
     // Access cart data - handle both possible response structures
     const cartResponse = cartData?.data || cartData;
     const cartItems = cartResponse?.cartItems || [];
-    const totalPrice = cartResponse?.totalPrice || 0;
     const cartCount = cartItems.reduce((acc, item) => acc + item.quantity, 0);
+
+    // Parse discounts data
+    const discounts = Array.isArray(discountsData?.data)
+        ? discountsData.data
+        : Array.isArray(discountsData)
+        ? discountsData
+        : [];
+
+    // Calculate cart totals with discounts
+    let totalOriginal = 0;
+    let totalDiscounted = 0;
+
+    cartItems.forEach(item => {
+        const itemTotal = item.price * item.quantity;
+        totalOriginal += itemTotal;
+
+        const discount = findApplicableDiscount(item.bookId, discounts);
+        if (discount) {
+            const { discountedPrice } = calculateDiscountedPrice(item.price, discount);
+            totalDiscounted += discountedPrice * item.quantity;
+        } else {
+            totalDiscounted += itemTotal;
+        }
+    });
+
+    const totalSaved = totalOriginal - totalDiscounted;
 
     const handleViewCart = () => {
         setIsOpen(false);
@@ -154,74 +190,133 @@ export default function CartPopover() {
                         </div>
                     ) : (
                         <AnimatePresence mode="popLayout">
-                            {cartItems.map((item, index) => (
-                                <motion.div
-                                    key={item.bookId}
-                                    initial={{ opacity: 0, x: -20 }}
-                                    animate={{ opacity: 1, x: 0 }}
-                                    exit={{ opacity: 0, x: 20 }}
-                                    transition={{ duration: 0.2 }}
-                                    layout
-                                >
-                                    <div className="py-3">
-                                        <div className="flex items-start gap-3">
-                                            <div className="relative">
-                                                <img
-                                                    src={item.imgUrl || "https://via.placeholder.com/60"}
-                                                    alt={item.bookName}
-                                                    className="w-14 h-14 rounded-md object-cover border"
-                                                />
-                                                <Badge className="absolute -top-1.5 -right-1.5 h-5 w-5 flex items-center justify-center p-0 text-xs">
-                                                    {item.quantity}
-                                                </Badge>
-                                            </div>
-                                            <div className="flex-1 min-w-0">
-                                                <p className="text-sm font-medium leading-tight mb-1 line-clamp-2">
-                                                    {item.bookName}
-                                                </p>
-                                                <p className="text-xs text-muted-foreground mb-1">
-                                                    Store: {item.storeName}
-                                                </p>
-                                                <div className="flex items-center justify-between">
-                                                    <p className="text-xs text-muted-foreground">
-                                                        {item.quantity} × {item.price.toLocaleString()} đ
-                                                    </p>
-                                                    <p className="text-sm font-semibold text-primary">
-                                                        {(item.price * item.quantity).toLocaleString()} đ
-                                                    </p>
+                            {cartItems.map((item, index) => {
+                                const discount = findApplicableDiscount(item.bookId, discounts);
+                                const { discountedPrice } = discount
+                                    ? calculateDiscountedPrice(item.price, discount)
+                                    : { discountedPrice: item.price };
+
+                                return (
+                                    <motion.div
+                                        key={item.bookId}
+                                        initial={{ opacity: 0, x: -20 }}
+                                        animate={{ opacity: 1, x: 0 }}
+                                        exit={{ opacity: 0, x: 20 }}
+                                        transition={{ duration: 0.2 }}
+                                        layout
+                                    >
+                                        <div className="py-3">
+                                            <div className="flex items-start gap-3">
+                                                <div className="relative">
+                                                    <img
+                                                        src={item.imgUrl || "https://via.placeholder.com/60"}
+                                                        alt={item.bookName}
+                                                        className="w-14 h-14 rounded-md object-cover border"
+                                                    />
+                                                    {discount && (
+                                                        <Badge className="absolute -top-1.5 -left-1.5 bg-gradient-to-r from-red-500 to-orange-500 text-white border-0 shadow-lg text-xs px-1">
+                                                            <Sparkles className="w-2.5 h-2.5 mr-0.5" />
+                                                            -{discount.percentage ? `${discount.discountAmount}%` : `${discount.discountAmount.toLocaleString()}đ`}
+                                                        </Badge>
+                                                    )}
+                                                    <Badge className="absolute -top-1.5 -right-1.5 h-5 w-5 flex items-center justify-center p-0 text-xs">
+                                                        {item.quantity}
+                                                    </Badge>
                                                 </div>
+                                                <div className="flex-1 min-w-0">
+                                                    <p className="text-sm font-medium leading-tight mb-1 line-clamp-2">
+                                                        {item.bookName}
+                                                    </p>
+                                                    <p className="text-xs text-muted-foreground mb-1">
+                                                        Store: {item.storeName}
+                                                    </p>
+                                                    <div className="flex items-center justify-between">
+                                                        {discount ? (
+                                                            <div className="flex flex-col gap-0.5">
+                                                                <p className="text-xs text-muted-foreground line-through">
+                                                                    {item.quantity} × {item.price.toLocaleString()} đ
+                                                                </p>
+                                                                <p className="text-xs text-red-600 font-medium">
+                                                                    {item.quantity} × {discountedPrice.toLocaleString()} đ
+                                                                </p>
+                                                            </div>
+                                                        ) : (
+                                                            <p className="text-xs text-muted-foreground">
+                                                                {item.quantity} × {item.price.toLocaleString()} đ
+                                                            </p>
+                                                        )}
+                                                        {discount ? (
+                                                            <div className="text-right">
+                                                                <p className="text-xs text-muted-foreground line-through">
+                                                                    {(item.price * item.quantity).toLocaleString()} đ
+                                                                </p>
+                                                                <p className="text-sm font-semibold text-red-500">
+                                                                    {(discountedPrice * item.quantity).toLocaleString()} đ
+                                                                </p>
+                                                            </div>
+                                                        ) : (
+                                                            <p className="text-sm font-semibold text-primary">
+                                                                {(item.price * item.quantity).toLocaleString()} đ
+                                                            </p>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                                                    onClick={() => handleRemove(item)}
+                                                    disabled={removeMutation.isPending}
+                                                >
+                                                    <X className="w-4 h-4" />
+                                                </Button>
                                             </div>
-                                            <Button
-                                                variant="ghost"
-                                                size="icon"
-                                                className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-                                                onClick={() => handleRemove(item)}
-                                                disabled={removeMutation.isPending}
-                                            >
-                                                <X className="w-4 h-4" />
-                                            </Button>
                                         </div>
-                                    </div>
-                                    {index < cartItems.length - 1 && <Separator />}
-                                </motion.div>
-                            ))}
+                                        {index < cartItems.length - 1 && <Separator />}
+                                    </motion.div>
+                                );
+                            })}
                         </AnimatePresence>
                     )}
                 </ScrollArea>
 
                 {cartItems.length > 0 && (
                     <div className="p-4 border-t bg-muted/30">
-                        <div className="flex items-center justify-between mb-3">
-                            <span className="text-sm font-medium">Tổng cộng:</span>
-                            <motion.span
-                                key={totalPrice}
-                                initial={{ scale: 1.2, color: "#22c55e" }}
-                                animate={{ scale: 1, color: "inherit" }}
-                                transition={{ duration: 0.3 }}
-                                className="text-lg font-bold text-primary"
-                            >
-                                {totalPrice.toLocaleString()} đ
-                            </motion.span>
+                        {totalSaved > 0 && (
+                            <div className="mb-3 p-2 bg-gradient-to-r from-red-50 to-orange-50 border border-red-200 rounded-lg">
+                                <div className="flex items-center justify-between text-sm">
+                                    <span className="flex items-center gap-1 text-red-600 font-medium">
+                                        <Tag className="w-4 h-4" />
+                                        Giảm giá
+                                    </span>
+                                    <span className="text-red-600 font-bold">
+                                        -{totalSaved.toLocaleString()} đ
+                                    </span>
+                                </div>
+                            </div>
+                        )}
+
+                        <div className="space-y-2 mb-3">
+                            {totalSaved > 0 && (
+                                <div className="flex items-center justify-between text-sm">
+                                    <span className="text-muted-foreground">Tổng gốc:</span>
+                                    <span className="line-through text-muted-foreground">
+                                        {totalOriginal.toLocaleString()} đ
+                                    </span>
+                                </div>
+                            )}
+                            <div className="flex items-center justify-between">
+                                <span className="text-sm font-medium">Tổng cộng:</span>
+                                <motion.span
+                                    key={totalDiscounted}
+                                    initial={{ scale: 1.2, color: "#22c55e" }}
+                                    animate={{ scale: 1, color: "inherit" }}
+                                    transition={{ duration: 0.3 }}
+                                    className="text-lg font-bold text-primary"
+                                >
+                                    {totalDiscounted.toLocaleString()} đ
+                                </motion.span>
+                            </div>
                         </div>
 
                         <div className="flex gap-2">

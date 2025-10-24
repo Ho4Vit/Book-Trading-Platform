@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import useCustomQuery from "@/hooks/useCustomQuery";
 import useCustomMutation from "@/hooks/useCustomMutation";
-import { bookApi, orderApi } from "@/api/index.js";
+import { orderApi, paymentApi } from "@/api/index.js";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -29,7 +29,17 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
-import { Search, Package, Eye, Truck } from "lucide-react";
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Search, Package, Eye, Truck, ArrowUpDown } from "lucide-react";
 import toast from "react-hot-toast";
 import { useAuthStore } from "@/store/authStore";
 
@@ -37,37 +47,48 @@ export default function SellerOrders() {
     const { userId } = useAuthStore();
     const [searchQuery, setSearchQuery] = useState("");
     const [statusFilter, setStatusFilter] = useState("all");
+    const [sortBy, setSortBy] = useState("date-desc");
     const [selectedOrder, setSelectedOrder] = useState(null);
     const [isDetailDialogOpen, setIsDetailDialogOpen] = useState(false);
+    const [confirmDialog, setConfirmDialog] = useState({
+        open: false,
+        orderId: null,
+        newStatus: null,
+        currentStatus: null
+    });
 
-    // Fetch seller's books
-    const { data: sellerBooks } = useCustomQuery(
-        ["seller-books", userId],
-        () => bookApi.getBookBySeller(userId),
+    // Fetch seller's orders directly
+    const { data: ordersData, isLoading } = useCustomQuery(
+        ["seller-orders", userId],
+        () => orderApi.getOrderBySellerId(userId),
         {
             enabled: !!userId,
         }
     );
 
-    const books = sellerBooks || [];
-
-    // Fetch all orders
-    const { data: allOrders, isLoading } = useCustomQuery(
-        ["seller-orders"],
-        orderApi.getAllOrders
+    // Fetch all payments
+    const { data: paymentsData } = useCustomQuery(
+        ["all-payments"],
+        () => paymentApi.getAllPayment()
     );
 
-    // Filter orders that contain seller's books
-    const sellerOrders = allOrders?.filter(order =>
-        order.items?.some(item =>
-            books.some(book => book.id === item.bookId)
-        )
-    ).map(order => ({
-        ...order,
-        items: order.items?.filter(item =>
-            books.some(book => book.id === item.bookId)
-        )
-    })) || [];
+    const sellerOrders = Array.isArray(ordersData?.data)
+        ? ordersData.data
+        : Array.isArray(ordersData)
+        ? ordersData
+        : [];
+
+    const allPayments = Array.isArray(paymentsData?.data)
+        ? paymentsData.data
+        : Array.isArray(paymentsData)
+        ? paymentsData
+        : [];
+
+    // Create a map of payments by orderId
+    const paymentMap = allPayments.reduce((map, payment) => {
+        map[payment.orderId] = payment;
+        return map;
+    }, {});
 
     // Update order status mutation
     const updateStatusMutation = useCustomMutation(
@@ -81,12 +102,31 @@ export default function SellerOrders() {
         }
     );
 
-    // Filter orders
-    const filteredOrders = sellerOrders.filter(order => {
-        const matchesSearch = order.orderId?.toString().includes(searchQuery);
-        const matchesStatus = statusFilter === "all" || order.status === statusFilter;
-        return matchesSearch && matchesStatus;
-    });
+    // Filter and sort orders
+    const filteredOrders = sellerOrders
+        .filter(order => {
+            const matchesSearch = order.id?.toString().includes(searchQuery);
+            const matchesStatus = statusFilter === "all" || order.status === statusFilter;
+            return matchesSearch && matchesStatus;
+        })
+        .sort((a, b) => {
+            switch (sortBy) {
+                case "date-desc":
+                    return new Date(b.orderDate) - new Date(a.orderDate);
+                case "date-asc":
+                    return new Date(a.orderDate) - new Date(b.orderDate);
+                case "id-desc":
+                    return b.id - a.id;
+                case "id-asc":
+                    return a.id - b.id;
+                case "price-desc":
+                    return (b.totalPrice || 0) - (a.totalPrice || 0);
+                case "price-asc":
+                    return (a.totalPrice || 0) - (b.totalPrice || 0);
+                default:
+                    return 0;
+            }
+        });
 
     const handleViewDetails = (order) => {
         setSelectedOrder(order);
@@ -94,16 +134,36 @@ export default function SellerOrders() {
     };
 
     const handleUpdateStatus = (orderId, newStatus) => {
-        updateStatusMutation.mutate({ orderId, status: newStatus });
+        const order = sellerOrders.find(o => o.id === orderId);
+        setConfirmDialog({
+            open: true,
+            orderId,
+            newStatus,
+            currentStatus: order?.status
+        });
+    };
+
+    const confirmUpdateStatus = () => {
+        if (confirmDialog.orderId && confirmDialog.newStatus) {
+            updateStatusMutation.mutate({
+                orderId: confirmDialog.orderId,
+                status: confirmDialog.newStatus
+            });
+            setConfirmDialog({ open: false, orderId: null, newStatus: null, currentStatus: null });
+        }
+    };
+
+    const cancelUpdateStatus = () => {
+        setConfirmDialog({ open: false, orderId: null, newStatus: null, currentStatus: null });
     };
 
     const getStatusBadge = (status) => {
         const statusConfig = {
-            "Pending": { variant: "secondary", label: "Chờ xử lý" },
-            "Processing": { variant: "default", label: "Đang xử lý" },
-            "Shipped": { variant: "outline", label: "Đang giao" },
-            "Delivered": { variant: "success", label: "Đã giao" },
-            "Cancelled": { variant: "destructive", label: "Đã hủy" },
+            "PENDING": { variant: "secondary", label: "Chờ xử lý" },
+            "CONFIRMED": { variant: "default", label: "Đã xác nhận" },
+            "SHIPPING": { variant: "outline", label: "Đang giao" },
+            "DELIVERED": { variant: "success", label: "Đã giao" },
+            "CANCELLED": { variant: "destructive", label: "Đã hủy" },
         };
 
         const config = statusConfig[status] || { variant: "secondary", label: status };
@@ -111,7 +171,22 @@ export default function SellerOrders() {
     };
 
     const calculateOrderTotal = (order) => {
-        return order.items?.reduce((sum, item) => sum + (item.price * item.quantity), 0) || 0;
+        // Use totalPrice from the order response, or calculate from cartItems if needed
+        return order.totalPrice || order.cartItems?.reduce((sum, item) => sum + (item.price * item.quantity), 0) || 0;
+    };
+
+    // Check if order can be cancelled (PENDING status and over 24h from payment date)
+    const canCancelOrder = (order) => {
+        if (order.status !== "PENDING") return false;
+
+        const payment = paymentMap[order.id];
+        if (!payment || !payment.paymentDate) return false;
+
+        const paymentDate = new Date(payment.paymentDate);
+        const now = new Date();
+        const hoursDiff = (now - paymentDate) / (1000 * 60 * 60); // Convert ms to hours
+
+        return hoursDiff >= 24;
     };
 
     return (
@@ -140,7 +215,7 @@ export default function SellerOrders() {
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold">
-                            {sellerOrders.filter(o => o.status === "Pending").length}
+                            {sellerOrders.filter(o => o.status === "PENDING").length}
                         </div>
                     </CardContent>
                 </Card>
@@ -150,7 +225,7 @@ export default function SellerOrders() {
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold">
-                            {sellerOrders.filter(o => o.status === "Shipped").length}
+                            {sellerOrders.filter(o => o.status === "SHIPPING").length}
                         </div>
                     </CardContent>
                 </Card>
@@ -160,7 +235,7 @@ export default function SellerOrders() {
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold">
-                            {sellerOrders.filter(o => o.status === "Delivered").length}
+                            {sellerOrders.filter(o => o.status === "DELIVERED").length}
                         </div>
                     </CardContent>
                 </Card>
@@ -183,11 +258,25 @@ export default function SellerOrders() {
                     </SelectTrigger>
                     <SelectContent>
                         <SelectItem value="all">Tất cả</SelectItem>
-                        <SelectItem value="Pending">Chờ xử lý</SelectItem>
-                        <SelectItem value="Processing">Đang xử lý</SelectItem>
-                        <SelectItem value="Shipped">Đang giao</SelectItem>
-                        <SelectItem value="Delivered">Đã giao</SelectItem>
-                        <SelectItem value="Cancelled">Đã hủy</SelectItem>
+                        <SelectItem value="PENDING">Chờ xử lý</SelectItem>
+                        <SelectItem value="CONFIRMED">Đã xác nhận</SelectItem>
+                        <SelectItem value="SHIPPING">Đang giao</SelectItem>
+                        <SelectItem value="DELIVERED">Đã giao</SelectItem>
+                        <SelectItem value="CANCELLED">Đã hủy</SelectItem>
+                    </SelectContent>
+                </Select>
+                <Select value={sortBy} onValueChange={setSortBy}>
+                    <SelectTrigger className="w-[200px]">
+                        <ArrowUpDown className="h-4 w-4 mr-2" />
+                        <SelectValue placeholder="Sắp xếp" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="date-desc">Ngày mới nhất</SelectItem>
+                        <SelectItem value="date-asc">Ngày cũ nhất</SelectItem>
+                        <SelectItem value="id-desc">Mã đơn giảm dần</SelectItem>
+                        <SelectItem value="id-asc">Mã đơn tăng dần</SelectItem>
+                        <SelectItem value="price-desc">Giá cao nhất</SelectItem>
+                        <SelectItem value="price-asc">Giá thấp nhất</SelectItem>
                     </SelectContent>
                 </Select>
             </div>
@@ -222,15 +311,15 @@ export default function SellerOrders() {
                                 </TableHeader>
                                 <TableBody>
                                     {filteredOrders.map((order) => (
-                                        <TableRow key={order.orderId}>
+                                        <TableRow key={order.id}>
                                             <TableCell className="font-medium">
-                                                #{order.orderId}
+                                                #{order.id}
                                             </TableCell>
                                             <TableCell>
-                                                {new Date(order.createdAt).toLocaleDateString("vi-VN")}
+                                                {new Date(order.orderDate).toLocaleDateString("vi-VN")}
                                             </TableCell>
                                             <TableCell>
-                                                {order.items?.length || 0} sản phẩm
+                                                {order.cartItems?.length || 0} sản phẩm
                                             </TableCell>
                                             <TableCell>
                                                 {calculateOrderTotal(order).toLocaleString()}đ
@@ -248,20 +337,30 @@ export default function SellerOrders() {
                                                         <Eye className="h-4 w-4 mr-1" />
                                                         Xem
                                                     </Button>
-                                                    {order.status === "Pending" && (
+                                                    {order.status === "PENDING" && !canCancelOrder(order) && (
                                                         <Button
                                                             size="sm"
-                                                            onClick={() => handleUpdateStatus(order.orderId, "Processing")}
+                                                            onClick={() => handleUpdateStatus(order.id, "CONFIRMED")}
                                                             disabled={updateStatusMutation.isPending}
                                                         >
                                                             <Package className="h-4 w-4 mr-1" />
-                                                            Xử lý
+                                                            Xác nhận
                                                         </Button>
                                                     )}
-                                                    {order.status === "Processing" && (
+                                                    {order.status === "PENDING" && canCancelOrder(order) && (
                                                         <Button
                                                             size="sm"
-                                                            onClick={() => handleUpdateStatus(order.orderId, "Shipped")}
+                                                            variant="destructive"
+                                                            onClick={() => handleUpdateStatus(order.id, "CANCELLED")}
+                                                            disabled={updateStatusMutation.isPending}
+                                                        >
+                                                            Hủy đơn
+                                                        </Button>
+                                                    )}
+                                                    {order.status === "CONFIRMED" && (
+                                                        <Button
+                                                            size="sm"
+                                                            onClick={() => handleUpdateStatus(order.id, "SHIPPING")}
                                                             disabled={updateStatusMutation.isPending}
                                                         >
                                                             <Truck className="h-4 w-4 mr-1" />
@@ -290,7 +389,7 @@ export default function SellerOrders() {
             <Dialog open={isDetailDialogOpen} onOpenChange={setIsDetailDialogOpen}>
                 <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
                     <DialogHeader>
-                        <DialogTitle>Chi tiết đơn hàng #{selectedOrder?.orderId}</DialogTitle>
+                        <DialogTitle>Chi tiết đơn hàng #{selectedOrder?.id}</DialogTitle>
                         <DialogDescription>
                             Thông tin chi tiết về đơn hàng
                         </DialogDescription>
@@ -302,23 +401,64 @@ export default function SellerOrders() {
                                 <div>
                                     <p className="text-sm text-muted-foreground">Ngày đặt</p>
                                     <p className="font-medium">
-                                        {new Date(selectedOrder.createdAt).toLocaleString("vi-VN")}
+                                        {new Date(selectedOrder.orderDate).toLocaleString("vi-VN")}
                                     </p>
                                 </div>
                                 <div>
                                     <p className="text-sm text-muted-foreground">Trạng thái</p>
                                     <div className="mt-1">{getStatusBadge(selectedOrder.status)}</div>
                                 </div>
+                                {selectedOrder.transactionId && (
+                                    <div className="col-span-2">
+                                        <p className="text-sm text-muted-foreground">Mã giao dịch</p>
+                                        <p className="font-medium">{selectedOrder.transactionId}</p>
+                                    </div>
+                                )}
                             </div>
+
+                            {/* Payment Info */}
+                            {paymentMap[selectedOrder.id] && (
+                                <div>
+                                    <h4 className="font-semibold mb-2">Thông tin thanh toán</h4>
+                                    <div className="p-4 border rounded-lg space-y-2">
+                                        <p>
+                                            <span className="text-muted-foreground">Phương thức:</span>{" "}
+                                            <Badge variant="outline">
+                                                {paymentMap[selectedOrder.id].method === "COD" ? "Tiền mặt" : paymentMap[selectedOrder.id].method}
+                                            </Badge>
+                                        </p>
+                                        <p>
+                                            <span className="text-muted-foreground">Trạng thái:</span>{" "}
+                                            <Badge variant={paymentMap[selectedOrder.id].status === "SUCCESS" ? "success" : "secondary"}>
+                                                {paymentMap[selectedOrder.id].status === "SUCCESS" ? "Thành công" : paymentMap[selectedOrder.id].status}
+                                            </Badge>
+                                        </p>
+                                        <p>
+                                            <span className="text-muted-foreground">Số tiền:</span>{" "}
+                                            {paymentMap[selectedOrder.id].amount.toLocaleString()}đ
+                                        </p>
+                                        {paymentMap[selectedOrder.id].paymentDate && (
+                                            <p>
+                                                <span className="text-muted-foreground">Ngày thanh toán:</span>{" "}
+                                                {new Date(paymentMap[selectedOrder.id].paymentDate).toLocaleString("vi-VN")}
+                                            </p>
+                                        )}
+                                        {canCancelOrder(selectedOrder) && (
+                                            <div className="mt-3 p-3 bg-destructive/10 border border-destructive/20 rounded-md">
+                                                <p className="text-sm text-destructive font-medium">
+                                                    ⚠️ Đơn hàng đã quá 24 giờ chưa được xác nhận. Bạn có thể hủy đơn hàng này.
+                                                </p>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
 
                             {/* Customer Info */}
                             <div>
                                 <h4 className="font-semibold mb-2">Thông tin khách hàng</h4>
                                 <div className="p-4 border rounded-lg space-y-2">
                                     <p><span className="text-muted-foreground">Mã KH:</span> {selectedOrder.customerId}</p>
-                                    {selectedOrder.shippingAddress && (
-                                        <p><span className="text-muted-foreground">Địa chỉ:</span> {selectedOrder.shippingAddress}</p>
-                                    )}
                                 </div>
                             </div>
 
@@ -326,7 +466,7 @@ export default function SellerOrders() {
                             <div>
                                 <h4 className="font-semibold mb-2">Sản phẩm</h4>
                                 <div className="border rounded-lg divide-y">
-                                    {selectedOrder.items?.map((item, index) => (
+                                    {selectedOrder.cartItems?.map((item, index) => (
                                         <div key={index} className="p-4 flex items-center justify-between">
                                             <div className="flex items-center gap-3">
                                                 <img
@@ -359,22 +499,47 @@ export default function SellerOrders() {
 
                             {/* Actions */}
                             <div className="flex gap-2 justify-end">
-                                {selectedOrder.status === "Pending" && (
+                                {selectedOrder.status === "PENDING" && !canCancelOrder(selectedOrder) && (
                                     <Button
                                         onClick={() => {
-                                            handleUpdateStatus(selectedOrder.orderId, "Processing");
+                                            handleUpdateStatus(selectedOrder.id, "CONFIRMED");
                                             setIsDetailDialogOpen(false);
                                         }}
                                         disabled={updateStatusMutation.isPending}
                                     >
                                         <Package className="h-4 w-4 mr-2" />
-                                        Xử lý đơn hàng
+                                        Xác nhận đơn hàng
                                     </Button>
                                 )}
-                                {selectedOrder.status === "Processing" && (
+                                {selectedOrder.status === "PENDING" && canCancelOrder(selectedOrder) && (
+                                    <>
+                                        <Button
+                                            variant="outline"
+                                            onClick={() => {
+                                                handleUpdateStatus(selectedOrder.id, "CONFIRMED");
+                                                setIsDetailDialogOpen(false);
+                                            }}
+                                            disabled={updateStatusMutation.isPending}
+                                        >
+                                            <Package className="h-4 w-4 mr-2" />
+                                            Xác nhận đơn hàng
+                                        </Button>
+                                        <Button
+                                            variant="destructive"
+                                            onClick={() => {
+                                                handleUpdateStatus(selectedOrder.id, "CANCELLED");
+                                                setIsDetailDialogOpen(false);
+                                            }}
+                                            disabled={updateStatusMutation.isPending}
+                                        >
+                                            Hủy đơn hàng
+                                        </Button>
+                                    </>
+                                )}
+                                {selectedOrder.status === "CONFIRMED" && (
                                     <Button
                                         onClick={() => {
-                                            handleUpdateStatus(selectedOrder.orderId, "Shipped");
+                                            handleUpdateStatus(selectedOrder.id, "SHIPPING");
                                             setIsDetailDialogOpen(false);
                                         }}
                                         disabled={updateStatusMutation.isPending}
@@ -388,6 +553,47 @@ export default function SellerOrders() {
                     )}
                 </DialogContent>
             </Dialog>
+
+            {/* Status Change Confirmation Dialog */}
+            <AlertDialog open={confirmDialog.open} onOpenChange={(open) => !open && cancelUpdateStatus()}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Xác nhận thay đổi trạng thái</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Bạn có chắc chắn muốn thay đổi trạng thái đơn hàng #{confirmDialog.orderId}?
+                            <div className="mt-4 p-3 bg-muted rounded-lg space-y-2">
+                                <div className="flex items-center justify-between">
+                                    <span className="text-sm font-medium">Trạng thái hiện tại:</span>
+                                    {getStatusBadge(confirmDialog.currentStatus)}
+                                </div>
+                                <div className="flex items-center justify-center">
+                                    <ArrowUpDown className="h-4 w-4 text-muted-foreground" />
+                                </div>
+                                <div className="flex items-center justify-between">
+                                    <span className="text-sm font-medium">Trạng thái mới:</span>
+                                    {getStatusBadge(confirmDialog.newStatus)}
+                                </div>
+                            </div>
+                            {confirmDialog.newStatus === "CANCELLED" && (
+                                <p className="mt-3 text-sm text-destructive font-medium">
+                                    ⚠️ Hành động này sẽ hủy đơn hàng và không thể hoàn tác.
+                                </p>
+                            )}
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel onClick={cancelUpdateStatus}>
+                            Hủy bỏ
+                        </AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={confirmUpdateStatus}
+                            className={confirmDialog.newStatus === "CANCELLED" ? "bg-destructive hover:bg-destructive/90" : ""}
+                        >
+                            Xác nhận
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     );
 }

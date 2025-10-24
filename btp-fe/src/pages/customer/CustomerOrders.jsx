@@ -22,10 +22,28 @@ import {
     BreadcrumbPage,
     BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog";
 import FeedbackDialog from "@/components/FeedbackDialog";
-import { orderApi } from "@/api";
+import { orderApi, paymentApi } from "@/api";
 import { useAuthStore } from "@/store/authStore";
 import useCustomQuery from "@/hooks/useCustomQuery";
+import useCustomMutation from "@/hooks/useCustomMutation";
 import {
     Package,
     Search,
@@ -40,6 +58,11 @@ import {
     Home,
     Star,
     MessageSquare,
+    Ban,
+    CreditCard,
+    MapPin,
+    Phone,
+    Mail,
 } from "lucide-react";
 import { format } from "date-fns";
 import { vi } from "date-fns/locale";
@@ -80,14 +103,39 @@ export default function CustomerOrders() {
     const [sortBy, setSortBy] = useState("newest");
     const [feedbackDialogOpen, setFeedbackDialogOpen] = useState(false);
     const [selectedBook, setSelectedBook] = useState(null);
+    const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
+    const [orderToCancel, setOrderToCancel] = useState(null);
+    const [orderDetailDialogOpen, setOrderDetailDialogOpen] = useState(false);
+    const [selectedOrderDetail, setSelectedOrderDetail] = useState(null);
 
     // Fetch customer orders
-    const { data: ordersData, isLoading } = useCustomQuery(
+    const { data: ordersData, isLoading, refetch } = useCustomQuery(
         ["customerOrders", userId],
         () => orderApi.getOrdersByCustomerId(userId),
         {
             enabled: !!userId,
             refetchInterval: 30000, // Refetch every 30 seconds
+        }
+    );
+
+    // Fetch all payments
+    const { data: paymentsData } = useCustomQuery(
+        ["allPayments"],
+        () => paymentApi.getAllPayment(),
+        {
+            refetchInterval: 30000, // Refetch every 30 seconds
+        }
+    );
+
+    // Cancel order mutation
+    const cancelOrderMutation = useCustomMutation(
+        (orderId) => orderApi.cancelOrder(orderId),
+        {
+            onSuccess: () => {
+                refetch();
+                setCancelDialogOpen(false);
+                setOrderToCancel(null);
+            },
         }
     );
 
@@ -99,6 +147,21 @@ export default function CustomerOrders() {
             ? ordersData
             : [];
     }, [ordersData]);
+
+    // Process payments data and create a mapping from orderId to payment
+    const paymentsMap = useMemo(() => {
+        const payments = Array.isArray(paymentsData?.data)
+            ? paymentsData.data
+            : Array.isArray(paymentsData)
+            ? paymentsData
+            : [];
+
+        const map = new Map();
+        payments.forEach((payment) => {
+            map.set(payment.orderId, payment);
+        });
+        return map;
+    }, [paymentsData]);
 
     // Filter and sort orders
     const filteredOrders = useMemo(() => {
@@ -156,8 +219,27 @@ export default function CustomerOrders() {
     }, [orders]);
 
     const handleViewOrderDetail = (orderId) => {
-        // Navigate to order detail page (you can create this later)
-        console.log("View order detail:", orderId);
+        const order = orders.find(o => o.id === orderId);
+        const payment = paymentsMap.get(orderId);
+
+        if (order) {
+            setSelectedOrderDetail({
+                ...order,
+                payment: payment || null
+            });
+            setOrderDetailDialogOpen(true);
+        }
+    };
+
+    const handleOpenCancelDialog = (order) => {
+        setOrderToCancel(order);
+        setCancelDialogOpen(true);
+    };
+
+    const handleConfirmCancel = () => {
+        if (orderToCancel) {
+            cancelOrderMutation.mutate(orderToCancel.id);
+        }
     };
 
     const handleOpenFeedbackDialog = (order, book) => {
@@ -490,6 +572,17 @@ export default function CustomerOrders() {
                                                         <Eye className="w-4 h-4" />
                                                         Chi tiết
                                                     </Button>
+                                                    {order.status === "PENDING" && (
+                                                        <Button
+                                                            variant="destructive"
+                                                            size="sm"
+                                                            className="gap-2"
+                                                            onClick={() => handleOpenCancelDialog(order)}
+                                                        >
+                                                            <Ban className="w-4 h-4" />
+                                                            Hủy đơn
+                                                        </Button>
+                                                    )}
                                                     <Button
                                                         variant="outline"
                                                         size="sm"
@@ -510,6 +603,219 @@ export default function CustomerOrders() {
                 </TabsContent>
             </Tabs>
 
+
+            {/* Order Detail Dialog */}
+            <Dialog open={orderDetailDialogOpen} onOpenChange={setOrderDetailDialogOpen}>
+                <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2 text-2xl">
+                            <Package className="w-6 h-6 text-primary" />
+                            Chi tiết đơn hàng #{selectedOrderDetail?.id}
+                        </DialogTitle>
+                        <DialogDescription>
+                            Thông tin chi tiết về đơn hàng và thanh toán
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    {selectedOrderDetail && (
+                        <div className="space-y-6">
+                            {/* Order Status */}
+                            <Card>
+                                <CardHeader>
+                                    <div className="flex items-center justify-between">
+                                        <h3 className="text-lg font-semibold">Trạng thái đơn hàng</h3>
+                                        <Badge
+                                            className={`${
+                                                statusConfig[selectedOrderDetail.status]?.color
+                                            } border`}
+                                        >
+                                            {statusConfig[selectedOrderDetail.status]?.label || selectedOrderDetail.status}
+                                        </Badge>
+                                    </div>
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                        <div className="flex items-center gap-2 text-sm">
+                                            <Calendar className="w-4 h-4 text-muted-foreground" />
+                                            <span className="text-muted-foreground">Ngày đặt:</span>
+                                            <span className="font-medium">{formatDate(selectedOrderDetail.orderDate)}</span>
+                                        </div>
+                                        {selectedOrderDetail.transactionId && (
+                                            <div className="flex items-center gap-2 text-sm">
+                                                <CreditCard className="w-4 h-4 text-muted-foreground" />
+                                                <span className="text-muted-foreground">Mã giao dịch:</span>
+                                                <span className="font-medium">{selectedOrderDetail.transactionId}</span>
+                                            </div>
+                                        )}
+                                    </div>
+                                </CardContent>
+                            </Card>
+
+                            {/* Payment Information */}
+                            {selectedOrderDetail.payment && (
+                                <Card className="border-primary/20">
+                                    <CardHeader className="bg-primary/5">
+                                        <h3 className="text-lg font-semibold flex items-center gap-2">
+                                            <CreditCard className="w-5 h-5 text-primary" />
+                                            Thông tin thanh toán
+                                        </h3>
+                                    </CardHeader>
+                                    <CardContent className="pt-6">
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                            <div className="space-y-1">
+                                                <p className="text-sm text-muted-foreground">Phương thức thanh toán</p>
+                                                <p className="font-semibold flex items-center gap-2">
+                                                    <CreditCard className="w-4 h-4" />
+                                                    {selectedOrderDetail.payment.method === 'COD' ? 'Thanh toán khi nhận hàng (COD)' : selectedOrderDetail.payment.method}
+                                                </p>
+                                            </div>
+                                            <div className="space-y-1">
+                                                <p className="text-sm text-muted-foreground">Trạng thái thanh toán</p>
+                                                <Badge
+                                                    className={
+                                                        selectedOrderDetail.payment.status === 'SUCCESS'
+                                                            ? 'bg-green-100 text-green-800 border-green-200'
+                                                            : selectedOrderDetail.payment.status === 'PENDING'
+                                                            ? 'bg-yellow-100 text-yellow-800 border-yellow-200'
+                                                            : 'bg-red-100 text-red-800 border-red-200'
+                                                    }
+                                                >
+                                                    {selectedOrderDetail.payment.status === 'SUCCESS' ? 'Thành công' :
+                                                     selectedOrderDetail.payment.status === 'PENDING' ? 'Chờ thanh toán' :
+                                                     'Thất bại'}
+                                                </Badge>
+                                            </div>
+                                            <div className="space-y-1">
+                                                <p className="text-sm text-muted-foreground">Số tiền thanh toán</p>
+                                                <p className="font-bold text-lg text-primary">
+                                                    {selectedOrderDetail.payment.amount.toLocaleString("vi-VN")}₫
+                                                </p>
+                                            </div>
+                                            {selectedOrderDetail.payment.paymentDate && (
+                                                <div className="space-y-1">
+                                                    <p className="text-sm text-muted-foreground">Ngày thanh toán</p>
+                                                    <p className="font-medium">{formatDate(selectedOrderDetail.payment.paymentDate)}</p>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                            )}
+
+                            {/* Order Items */}
+                            <Card>
+                                <CardHeader>
+                                    <h3 className="text-lg font-semibold">Sản phẩm đã đặt</h3>
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="space-y-4">
+                                        {selectedOrderDetail.cartItems?.map((item, index) => (
+                                            <div key={item.bookId} className="flex gap-4 pb-4 border-b last:border-0">
+                                                <img
+                                                    src={item.imgUrl || "https://via.placeholder.com/80x100"}
+                                                    alt={item.bookName}
+                                                    className="w-20 h-24 object-cover rounded border"
+                                                />
+                                                <div className="flex-1 space-y-2">
+                                                    <h4 className="font-semibold line-clamp-2">{item.bookName}</h4>
+                                                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                                        <ShoppingBag className="w-3 h-3" />
+                                                        <span>{item.storeName}</span>
+                                                    </div>
+                                                    <div className="flex items-center justify-between">
+                                                        <span className="text-sm text-muted-foreground">
+                                                            Số lượng: {item.quantity}
+                                                        </span>
+                                                        <div className="text-right">
+                                                            <p className="text-sm text-muted-foreground">
+                                                                {item.price.toLocaleString("vi-VN")}₫ x {item.quantity}
+                                                            </p>
+                                                            <p className="font-semibold text-primary">
+                                                                {(item.price * item.quantity).toLocaleString("vi-VN")}₫
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </CardContent>
+                            </Card>
+
+                            {/* Order Summary */}
+                            <Card className="bg-muted/30">
+                                <CardContent className="pt-6">
+                                    <div className="space-y-3">
+                                        <div className="flex justify-between text-sm">
+                                            <span className="text-muted-foreground">Tạm tính</span>
+                                            <span className="font-medium">
+                                                {selectedOrderDetail.totalPrice.toLocaleString("vi-VN")}₫
+                                            </span>
+                                        </div>
+                                        <div className="flex justify-between text-sm">
+                                            <span className="text-muted-foreground">Phí vận chuyển</span>
+                                            <span className="font-medium text-green-600">Miễn phí</span>
+                                        </div>
+                                        <Separator />
+                                        <div className="flex justify-between">
+                                            <span className="font-semibold text-lg">Tổng cộng</span>
+                                            <span className="font-bold text-xl text-primary">
+                                                {selectedOrderDetail.totalPrice.toLocaleString("vi-VN")}₫
+                                            </span>
+                                        </div>
+                                    </div>
+                                </CardContent>
+                            </Card>
+
+                            {/* Action Buttons */}
+                            <div className="flex justify-end gap-3">
+                                {selectedOrderDetail.status === "PENDING" && (
+                                    <Button
+                                        variant="destructive"
+                                        className="gap-2"
+                                        onClick={() => {
+                                            setOrderDetailDialogOpen(false);
+                                            handleOpenCancelDialog(selectedOrderDetail);
+                                        }}
+                                    >
+                                        <Ban className="w-4 h-4" />
+                                        Hủy đơn hàng
+                                    </Button>
+                                )}
+                                <Button
+                                    variant="outline"
+                                    onClick={() => setOrderDetailDialogOpen(false)}
+                                >
+                                    Đóng
+                                </Button>
+                            </div>
+                        </div>
+                    )}
+                </DialogContent>
+            </Dialog>
+
+            {/* Cancel Order Confirmation Dialog */}
+            <AlertDialog open={cancelDialogOpen} onOpenChange={setCancelDialogOpen}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Xác nhận hủy đơn hàng</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Bạn có chắc chắn muốn hủy đơn hàng #{orderToCancel?.id}?
+                            <br />
+                            Hành động này không thể hoàn tác.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Không, giữ đơn hàng</AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={handleConfirmCancel}
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                        >
+                            Có, hủy đơn hàng
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
 
             {/* Feedback Dialog */}
             <FeedbackDialog

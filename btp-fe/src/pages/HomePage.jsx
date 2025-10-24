@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { bookApi } from "@/api";
+import { bookApi, discountApi } from "@/api";
 import { cartApi } from "@/api/cartApi";
 import Footer from "@/components/Footer.jsx";
 import useCustomQuery from "@/hooks/useCustomQuery";
@@ -20,6 +20,7 @@ import useCustomMutation from "@/hooks/useCustomMutation";
 import Header from "@/components/Header.jsx";
 import SearchBar from "@/components/SearchBar.jsx";
 import BookRating from "@/components/BookRating.jsx";
+import { findApplicableDiscount, calculateDiscountedPrice } from "@/utils/discountUtils";
 import toast from "react-hot-toast";
 import { useAuthStore } from "@/store/authStore";
 import { useQueryClient } from "@tanstack/react-query";
@@ -48,6 +49,13 @@ export default function HomePage() {
 		{ staleTime: 1000 * 60 * 5 }
 	);
 
+	// Fetch all discounts
+	const { data: discountsData } = useCustomQuery(
+		["discounts"],
+		() => discountApi.getAllDiscounts(),
+		{ staleTime: 1000 * 60 * 5 }
+	);
+
 	// Add to cart mutation
 	const addToCartMutation = useCustomMutation(
 		(data) => cartApi.addToCart(data),
@@ -68,6 +76,12 @@ export default function HomePage() {
 		? booksData.data
 		: Array.isArray(booksData)
 		? booksData
+		: [];
+
+	const discounts = Array.isArray(discountsData?.data)
+		? discountsData.data
+		: Array.isArray(discountsData)
+		? discountsData
 		: [];
 
 	const featuredBooks = books.slice(0, 4);
@@ -308,6 +322,11 @@ export default function HomePage() {
 						<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
 							{featuredBooks.map((book, index) => {
 								const isOutOfStock = book.stock === 0 || book.stock === null;
+								const discount = findApplicableDiscount(book.id || book._id, discounts);
+								const { discountedPrice, savedAmount } = discount
+									? calculateDiscountedPrice(book.price, discount)
+									: { discountedPrice: book.price, savedAmount: 0 };
+
 								return (
 									<motion.div
 										key={book.id || book._id}
@@ -340,10 +359,17 @@ export default function HomePage() {
 													</Badge>
 												) : (
 													<>
-														<Badge className="absolute top-3 right-3 bg-green-500 text-white border-0">
-															<Star className="w-3 h-3 mr-1" />
-															Mới
-														</Badge>
+														{discount ? (
+															<Badge className="absolute top-3 right-3 bg-gradient-to-r from-red-500 to-orange-500 text-white border-0 shadow-lg">
+																<Sparkles className="w-3 h-3 mr-1" />
+																-{discount.percentage ? `${discount.discountAmount}%` : `${discount.discountAmount.toLocaleString()}đ`}
+															</Badge>
+														) : (
+															<Badge className="absolute top-3 right-3 bg-green-500 text-white border-0">
+																<Star className="w-3 h-3 mr-1" />
+																Mới
+															</Badge>
+														)}
 														{book.stock && book.stock <= 5 && (
 															<Badge className="absolute top-12 right-3 bg-orange-500 text-white border-0 text-xs">
 																Chỉ còn {book.stock}
@@ -364,9 +390,22 @@ export default function HomePage() {
 											<CardFooter className="pt-0 flex items-center justify-between">
 												<div>
 													{book.price !== undefined && (
-														<p className="text-2xl font-bold text-primary">
-															{Number(book.price).toLocaleString("vi-VN")}đ
-														</p>
+														<div className="space-y-1">
+															{discount ? (
+																<>
+																	<p className="text-xs text-muted-foreground line-through">
+																		{Number(book.price).toLocaleString("vi-VN")}đ
+																	</p>
+																	<p className="text-2xl font-bold text-red-500">
+																		{discountedPrice.toLocaleString("vi-VN")}đ
+																	</p>
+																</>
+															) : (
+																<p className="text-2xl font-bold text-primary">
+																	{Number(book.price).toLocaleString("vi-VN")}đ
+																</p>
+															)}
+														</div>
 													)}
 												</div>
 												<Button
@@ -406,6 +445,11 @@ export default function HomePage() {
 					<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
 						{trendingBooks.map((book, index) => {
 							const isOutOfStock = book.stock === 0 || book.stock === null;
+							const discount = findApplicableDiscount(book.id || book._id, discounts);
+							const { discountedPrice, savedAmount } = discount
+								? calculateDiscountedPrice(book.price, discount)
+								: { discountedPrice: book.price, savedAmount: 0 };
+
 							return (
 								<motion.div
 									key={book.id || book._id}
@@ -442,9 +486,10 @@ export default function HomePage() {
 														<TrendingUp className="w-3 h-3 mr-1" />
 														Hot
 													</Badge>
-													{book.stock && book.stock <= 5 && (
-														<Badge className="absolute top-12 left-3 bg-red-500 text-white border-0 text-xs animate-pulse">
-															Chỉ còn {book.stock}
+													{discount && (
+														<Badge className="absolute top-3 right-3 bg-gradient-to-r from-red-500 to-orange-500 text-white border-0 shadow-lg">
+															<Sparkles className="w-3 h-3 mr-1" />
+															-{discount.percentage ? `${discount.discountAmount}%` : `${discount.discountAmount.toLocaleString()}đ`}
 														</Badge>
 													)}
 												</>
@@ -462,14 +507,28 @@ export default function HomePage() {
 										<CardFooter className="pt-0 flex items-center justify-between">
 											<div>
 												{book.price !== undefined && (
-													<p className="text-2xl font-bold text-primary">
-														{Number(book.price).toLocaleString("vi-VN")}đ
-													</p>
+													<div className="space-y-1">
+														{discount ? (
+															<>
+																<p className="text-xs text-muted-foreground line-through">
+																	{Number(book.price).toLocaleString("vi-VN")}đ
+																</p>
+																<p className="text-2xl font-bold text-red-500">
+																	{discountedPrice.toLocaleString("vi-VN")}đ
+																</p>
+															</>
+														) : (
+															<p className="text-2xl font-bold text-orange-500">
+																{Number(book.price).toLocaleString("vi-VN")}đ
+															</p>
+														)}
+													</div>
 												)}
 											</div>
 											<Button
 												size="sm"
-												className="gap-2 opacity-0 group-hover:opacity-100 transition-opacity"
+												variant="outline"
+												className="gap-2 opacity-0 group-hover:opacity-100 transition-opacity border-orange-500 text-orange-500 hover:bg-orange-500 hover:text-white"
 												onClick={(e) => handleAddToCart(book, e)}
 												disabled={addToCartMutation.isPending || isOutOfStock}
 											>

@@ -1,13 +1,14 @@
 import React, { useState, useMemo } from "react";
 import { useParams, useLocation, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { bookApi, categoryApi, sellerApi } from "@/api";
+import { bookApi, categoryApi, sellerApi, discountApi } from "@/api";
 import { cartApi } from "@/api/cartApi";
 import useCustomQuery from "@/hooks/useCustomQuery";
 import useCustomMutation from "@/hooks/useCustomMutation";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import BookRating from "@/components/BookRating";
+import { findApplicableDiscount, calculateDiscountedPrice } from "@/utils/discountUtils";
 import { Button } from "@/components/ui/button";
 import {
 	Card,
@@ -46,6 +47,7 @@ import {
 	ShoppingCart,
 	SlidersHorizontal,
 	Grid3x3,
+	Sparkles,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { useAuthStore } from "@/store/authStore";
@@ -89,6 +91,13 @@ export default function CategoryBooks() {
 		["sellers"],
 		() => sellerApi.getAllSellers(),
 		{ staleTime: 1000 * 60 * 10 }
+	);
+
+	// Fetch all discounts
+	const { data: discountsData } = useCustomQuery(
+		["discounts"],
+		() => discountApi.getAllDiscounts(),
+		{ staleTime: 1000 * 60 * 5 }
 	);
 
 	// Add to cart mutation
@@ -136,6 +145,16 @@ export default function CategoryBooks() {
 		}
 		return [];
 	}, [sellersData]);
+
+	const discounts = useMemo(() => {
+		if (Array.isArray(discountsData?.data)) {
+			return discountsData.data;
+		}
+		if (Array.isArray(discountsData)) {
+			return discountsData;
+		}
+		return [];
+	}, [discountsData]);
 
 	// Helper function to get seller store name by ID
 	const getSellerStoreName = (sellerId) => {
@@ -624,6 +643,11 @@ export default function CategoryBooks() {
 							<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
 								{filteredBooks.map((book, index) => {
 									const isOutOfStock = book.stock === 0 || book.stock === null;
+									const discount = findApplicableDiscount(book.id || book._id, discounts);
+									const { discountedPrice, savedAmount } = discount
+										? calculateDiscountedPrice(book.price, discount)
+										: { discountedPrice: book.price, savedAmount: 0 };
+
 									return (
 										<motion.div
 											key={book.id || book._id}
@@ -655,12 +679,21 @@ export default function CategoryBooks() {
 															Hết hàng
 														</Badge>
 													) : (
-														book.stock &&
-														book.stock <= 5 && (
-															<Badge className="absolute top-3 right-3 bg-orange-500 text-white border-0 text-xs">
-																Chỉ còn {book.stock}
-															</Badge>
-														)
+														<>
+															{discount ? (
+																<Badge className="absolute top-3 right-3 bg-gradient-to-r from-red-500 to-orange-500 text-white border-0 shadow-lg">
+																	<Sparkles className="w-3 h-3 mr-1" />
+																	-{discount.percentage ? `${discount.discountAmount}%` : `${discount.discountAmount.toLocaleString()}đ`}
+																</Badge>
+															) : (
+																book.stock &&
+																book.stock <= 5 && (
+																	<Badge className="absolute top-3 right-3 bg-orange-500 text-white border-0 text-xs">
+																		Chỉ còn {book.stock}
+																	</Badge>
+																)
+															)}
+														</>
 													)}
 													<BookRating bookId={book.id || book._id} />
 												</div>
@@ -675,9 +708,22 @@ export default function CategoryBooks() {
 												<CardFooter className="pt-0 flex items-center justify-between">
 													<div>
 														{book.price !== undefined && (
-															<p className="text-xl font-bold text-primary">
-																{Number(book.price).toLocaleString("vi-VN")}đ
-															</p>
+															<div className="space-y-1">
+																{discount ? (
+																	<>
+																		<p className="text-xs text-muted-foreground line-through">
+																			{Number(book.price).toLocaleString("vi-VN")}đ
+																		</p>
+																		<p className="text-xl font-bold text-red-500">
+																			{discountedPrice.toLocaleString("vi-VN")}đ
+																		</p>
+																	</>
+																) : (
+																	<p className="text-xl font-bold text-primary">
+																		{Number(book.price).toLocaleString("vi-VN")}đ
+																	</p>
+																)}
+															</div>
 														)}
 													</div>
 													<Button
