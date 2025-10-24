@@ -170,7 +170,7 @@ public class OrderService {
     }
 
     public ResponseEntity<ResponseData<List<OrderDTO>>> getOrdersBySellerId(Long sellerId) {
-        List<Order> orders = orderRepository.findOrdersBySellerIdAndStatus(sellerId, OrderStatus.PENDING);
+        List<Order> orders = orderRepository.findOrdersBySellerIdAndStatus(sellerId);
 
 //        if (orders.isEmpty()) {
 //            throw new BusinessException(AppException.NOT_FOUND);
