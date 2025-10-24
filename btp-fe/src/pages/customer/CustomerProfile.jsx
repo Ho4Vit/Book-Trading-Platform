@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -17,173 +17,227 @@ import { customerApi } from '@/api/customerApi';
 import { useAuthStore } from '@/store/authStore';
 import { format } from 'date-fns';
 import toast from 'react-hot-toast';
-import { User, Mail, Phone, MapPin, Calendar as CalendarIcon, Edit2, Save, X } from 'lucide-react';
+import { User, Mail, Phone, MapPin, Calendar as CalendarIcon, Edit2, Save, X, Camera, Upload } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const CustomerProfile = () => {
-  const { userId } = useAuthStore();
-  const [isEditing, setIsEditing] = useState(false);
-  const [editedData, setEditedData] = useState(null);
-  const [selectedDate, setSelectedDate] = useState(null);
+    const { userId } = useAuthStore();
+    const [isEditing, setIsEditing] = useState(false);
+    const [editedData, setEditedData] = useState(null);
+    const [selectedDate, setSelectedDate] = useState(null);
+    const [avatarPreview, setAvatarPreview] = useState(null);
+    const fileInputRef = useRef(null);
 
-  // Fetch customer data
-  const { data: customerData, isLoading, refetch } = useCustomQuery(
-    ['customer', userId],
-    () => customerApi.getCustomerById(userId),
-    {
-      enabled: !!userId,
-    }
-  );
+    // Fetch customer data
+    const { data: customerData, isLoading, refetch } = useCustomQuery(
+        ['customer', userId],
+        () => customerApi.getCustomerById(userId),
+        {
+            enabled: !!userId,
+        }
+    );
 
-  // Update customer mutation
-  const updateMutation = useCustomMutation(
-    (data) => customerApi.updateCustomer(userId, data),
-    'PUT',
-    {
-      onSuccess: () => {
-        toast.success('Cập nhật thông tin thành công!');
-        setIsEditing(false);
-        refetch();
-      },
-    }
-  );
+    const customer = customerData;
 
-  const customer = customerData;
+    // Update customer mutation
+    const updateMutation = useCustomMutation(
+        (data) => customerApi.updateCustomer(userId, data),
+        'PUT',
+        {
+            onSuccess: () => {
+                toast.success('Cập nhật thông tin thành công!');
+                setIsEditing(false);
+                refetch();
+            },
+        }
+    );
 
-  // Initialize edit data when entering edit mode
-  const handleEditClick = () => {
-    setEditedData({
-      fullName: customer?.fullName || '',
-      phone: customer?.phone || '',
-      address: customer?.address || '',
-      dateOfBirth: customer?.dateOfBirth || '',
-      gender: customer?.gender || 'MALE',
-      profileImage: customer?.profileImage || '',
-    });
-    if (customer?.dateOfBirth) {
-      setSelectedDate(new Date(customer.dateOfBirth));
-    }
-    setIsEditing(true);
-  };
+    // Upload avatar mutation
+    const updateAvatarMutation = useCustomMutation(
+        (formData) => customerApi.updateAvatar(userId, formData),
+        'POST',
+        {
+            onSuccess: () => {
+                toast.success('Cập nhật ảnh đại diện thành công!');
+                setAvatarPreview(null);
+                refetch();
+            },
+        }
+    );
 
-  const handleCancelEdit = () => {
-    setIsEditing(false);
-    setEditedData(null);
-    setSelectedDate(null);
-  };
-
-  const handleInputChange = (field, value) => {
-    setEditedData((prev) => ({ ...prev, [field]: value }));
-  };
-
-  const handleSave = () => {
-    // Validate phone number
-    const phoneRegex = /^(\+84|84|0)[35789]\d{8}$/;
-    if (editedData.phone && !phoneRegex.test(editedData.phone)) {
-      toast.error('Số điện thoại không hợp lệ');
-      return;
-    }
-
-    // Prepare data for update
-    const updateData = {
-      ...editedData,
-      dateOfBirth: selectedDate ? format(selectedDate, 'yyyy-MM-dd') : editedData.dateOfBirth,
+    const handleAvatarClick = () => {
+        fileInputRef.current?.click();
     };
 
-    updateMutation.mutate(updateData);
-  };
+    const handleAvatarChange = (e) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            if (!file.type.startsWith('image/')) {
+                toast.error('Vui lòng chọn file ảnh!');
+                return;
+            }
 
-  // Loading state
-  if (isLoading) {
+            if (file.size > 5 * 1024 * 1024) {
+                toast.error('Kích thước ảnh không được vượt quá 5MB!');
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setAvatarPreview(reader.result);
+            };
+            reader.readAsDataURL(file);
+
+            const formData = new FormData();
+            formData.append('file', file);
+            updateAvatarMutation.mutate(formData);
+        }
+    };
+
+    const handleEditClick = () => {
+        setEditedData({
+            fullName: customer?.fullName || '',
+            phone: customer?.phone || '',
+            address: customer?.address || '',
+            dateOfBirth: customer?.dateOfBirth || '',
+            gender: customer?.gender || 'MALE',
+            profileImage: customer?.profileImage || '',
+        });
+        if (customer?.dateOfBirth) {
+            setSelectedDate(new Date(customer.dateOfBirth));
+        }
+        setIsEditing(true);
+    };
+
+    const handleCancelEdit = () => {
+        setIsEditing(false);
+        setEditedData(null);
+        setSelectedDate(null);
+    };
+
+    const handleInputChange = (field, value) => {
+        setEditedData((prev) => ({ ...prev, [field]: value }));
+    };
+
+    const handleSave = () => {
+        const phoneRegex = /^(\+84|84|0)[35789]\d{8}$/;
+        if (editedData.phone && !phoneRegex.test(editedData.phone)) {
+            toast.error('Số điện thoại không hợp lệ');
+            return;
+        }
+
+        const updateData = {
+            ...editedData,
+            dateOfBirth: selectedDate ? format(selectedDate, 'yyyy-MM-dd') : editedData.dateOfBirth,
+        };
+
+        updateMutation.mutate(updateData);
+    };
+
+    const getInitials = (name) => {
+        if (!name) return 'U';
+        return name
+            .split(' ')
+            .map((n) => n[0])
+            .join('')
+            .toUpperCase()
+            .slice(0, 2);
+    };
+
+    if (isLoading) {
+        return (
+            <div className="container mx-auto p-6 max-w-5xl">
+                <Skeleton className="h-32 w-full" />
+                <Skeleton className="h-96 w-full mt-4" />
+            </div>
+        );
+    }
+
+    if (!customer) {
+        return (
+            <div className="container mx-auto p-6 max-w-5xl">
+                <Card>
+                    <CardContent className="flex items-center justify-center h-64">
+                        <p className="text-muted-foreground">Không tìm thấy thông tin khách hàng</p>
+                    </CardContent>
+                </Card>
+            </div>
+        );
+    }
+
     return (
-      <div className="container mx-auto p-6 max-w-5xl">
-        <Card>
-          <CardHeader>
-            <Skeleton className="h-8 w-64" />
-            <Skeleton className="h-4 w-96 mt-2" />
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <Skeleton className="h-24 w-24 rounded-full" />
-            <Skeleton className="h-10 w-full" />
-            <Skeleton className="h-10 w-full" />
-            <Skeleton className="h-10 w-full" />
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
-  if (!customer) {
-    return (
-      <div className="container mx-auto p-6 max-w-5xl">
-        <Card>
-          <CardContent className="flex items-center justify-center h-64">
-            <p className="text-muted-foreground">Không tìm thấy thông tin khách hàng</p>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
-  const getInitials = (name) => {
-    if (!name) return 'U';
-    return name
-      .split(' ')
-      .map((n) => n[0])
-      .join('')
-      .toUpperCase()
-      .slice(0, 2);
-  };
-
-  return (
-    <div className="container mx-auto p-6 max-w-5xl">
-      <div className="flex justify-between items-center mb-6">
-        <div>
-          <h1 className="text-3xl font-bold">Hồ sơ của tôi</h1>
-          <p className="text-muted-foreground">Quản lý thông tin cá nhân của bạn</p>
-        </div>
-        {!isEditing && (
-          <Button onClick={handleEditClick}>
-            <Edit2 className="w-4 h-4 mr-2" />
-            Chỉnh sửa
-          </Button>
-        )}
-      </div>
-
-      <Tabs defaultValue="profile" className="space-y-6">
-        <TabsList>
-          <TabsTrigger value="profile">Thông tin cá nhân</TabsTrigger>
-          <TabsTrigger value="security">Bảo mật</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="profile">
-          <Card>
-            <CardHeader>
-              <CardTitle>Thông tin cá nhân</CardTitle>
-              <CardDescription>
-                Thông tin cơ bản và chi tiết về tài khoản của bạn
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              {/* Avatar Section */}
-              <div className="flex items-center gap-6">
-                <Avatar className="w-24 h-24">
-                  <AvatarImage src={customer.profileImage} alt={customer.fullName} />
-                  <AvatarFallback className="text-2xl">
-                    {getInitials(customer.fullName)}
-                  </AvatarFallback>
-                </Avatar>
-                <div className="flex-1">
-                  <h3 className="text-xl font-semibold">{customer.fullName}</h3>
-                  <p className="text-muted-foreground">{customer.email}</p>
-                  <Badge variant="outline" className="mt-2">
-                    <User className="w-3 h-3 mr-1" />
-                    Khách hàng
-                  </Badge>
+        <div className="container mx-auto p-6 max-w-5xl">
+            <div className="flex justify-between items-center mb-6">
+                <div>
+                    <h1 className="text-3xl font-bold">Hồ sơ của tôi</h1>
+                    <p className="text-muted-foreground">Quản lý thông tin cá nhân của bạn</p>
                 </div>
-              </div>
+                {!isEditing && (
+                    <Button onClick={handleEditClick}>
+                        <Edit2 className="w-4 h-4 mr-2" />
+                        Chỉnh sửa
+                    </Button>
+                )}
+            </div>
 
-              <Separator />
+            <Tabs defaultValue="profile" className="space-y-6">
+                <TabsList>
+                    <TabsTrigger value="profile">Thông tin cá nhân</TabsTrigger>
+                    <TabsTrigger value="security">Bảo mật</TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="profile">
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Thông tin cá nhân</CardTitle>
+                            <CardDescription>Thông tin cơ bản và chi tiết về tài khoản của bạn</CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-6">
+                            {/* Avatar Section */}
+                            <div className="flex items-center gap-6">
+                                <div className="relative group">
+                                    <Avatar className="w-24 h-24">
+                                        <AvatarImage src={avatarPreview || customer.profileImage} alt={customer.fullName} />
+                                        <AvatarFallback className="text-2xl">{getInitials(customer.fullName)}</AvatarFallback>
+                                    </Avatar>
+                                    <Button
+                                        size="icon"
+                                        variant="secondary"
+                                        className="absolute bottom-0 right-0 h-8 w-8 rounded-full opacity-0 group-hover:opacity-100 transition-opacity shadow-lg"
+                                        onClick={handleAvatarClick}
+                                        disabled={updateAvatarMutation.isPending}
+                                    >
+                                        {updateAvatarMutation.isPending ? (
+                                            <div className="animate-spin rounded-full h-4 w-4 border-2 border-primary border-t-transparent" />
+                                        ) : (
+                                            <Camera className="h-4 w-4" />
+                                        )}
+                                    </Button>
+                                    <input
+                                        ref={fileInputRef}
+                                        type="file"
+                                        accept="image/*"
+                                        onChange={handleAvatarChange}
+                                        className="hidden"
+                                    />
+                                </div>
+                                <div className="flex-1">
+                                    <h3 className="text-xl font-semibold">{customer.fullName}</h3>
+                                    <p className="text-muted-foreground">{customer.email}</p>
+                                    <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        className="mt-2 h-8 gap-2 text-xs"
+                                        onClick={handleAvatarClick}
+                                        disabled={updateAvatarMutation.isPending}
+                                    >
+                                        <Upload className="h-3 w-3" />
+                                        {updateAvatarMutation.isPending ? 'Đang tải lên...' : 'Thay đổi ảnh đại diện'}
+                                    </Button>
+                                </div>
+                            </div>
+
+                            <Separator />
 
               {/* Profile Information */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

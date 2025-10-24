@@ -13,3 +13,4 @@ export * from "./paymentApi";
 export * from "./sellerApi";
 export * from "./seriesApi";
 export * from "./feedbackApi";
+export * from "./discountApi";

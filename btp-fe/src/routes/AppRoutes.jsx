@@ -29,6 +29,8 @@ const SellerBooks = lazy(() => import("../pages/seller/SellerBooks"));
 const SellerOrders = lazy(() => import("../pages/seller/SellerOrders"));
 const SellerProfile = lazy(() => import("../pages/seller/SellerProfile"));
 const SellerInventory = lazy(() => import("../pages/seller/SellerInventory"));
+const SellerVouchers = lazy(() => import("../pages/seller/SellerVouchers"));
+const SellerFeedbacks = lazy(() => import("../pages/seller/SellerFeedbacks"));
 
 const CustomerDashboard = lazy(() => import("../pages/customer/CustomerDashboard"));
 const CustomerProfile = lazy(() => import("../pages/customer/CustomerProfile"));
@@ -82,6 +84,8 @@ export default function AppRoutes() {
                         <Route path="orders" element={<SellerOrders />} />
                         <Route path="profile" element={<SellerProfile />} />
                         <Route path="inventory" element={<SellerInventory />} />
+                        <Route path="vouchers" element={<SellerVouchers />} />
+                        <Route path="feedbacks" element={<SellerFeedbacks />} />
                     </Route>
 
                     {/* Admin Routes */}

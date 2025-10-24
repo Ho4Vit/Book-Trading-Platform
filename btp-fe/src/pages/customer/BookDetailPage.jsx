@@ -100,10 +100,11 @@ const BookDetailPage = () => {
     // Add to cart mutation
     const addToCartMutation = useCustomMutation(
         (data) => cartApi.addToCart(data),
+        null,
         {
             onSuccess: () => {
                 toast.success("Đã thêm sách vào giỏ hàng!");
-                queryClient.invalidateQueries({ queryKey: ["cart", userId] });
+                queryClient.invalidateQueries(["cart", userId]);
             },
             onError: (error) => {
                 toast.error(error?.message || "Không thể thêm vào giỏ hàng");

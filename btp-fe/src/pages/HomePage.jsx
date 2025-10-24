@@ -353,14 +353,14 @@ export default function HomePage() {
 												)}
 												<BookRating bookId={book.id || book._id} />
 											</div>
-											<CardHeader className="pb-3">
-												<CardTitle className="line-clamp-2 text-lg group-hover:text-primary transition-colors">
-													{book.title}
-												</CardTitle>
-												<CardDescription className="line-clamp-1">
-													{book.author}
-												</CardDescription>
-											</CardHeader>
+										<CardHeader className="pb-3">
+											<CardTitle className="line-clamp-2 text-lg group-hover:text-primary transition-colors h-14">
+												{book.title}
+											</CardTitle>
+											<CardDescription className="line-clamp-1">
+												{book.author}
+											</CardDescription>
+										</CardHeader>
 											<CardFooter className="pt-0 flex items-center justify-between">
 												<div>
 													{book.price !== undefined && (
@@ -452,7 +452,7 @@ export default function HomePage() {
 											<BookRating bookId={book.id || book._id} />
 										</div>
 										<CardHeader className="pb-3">
-											<CardTitle className="line-clamp-2 text-lg group-hover:text-orange-500 transition-colors">
+											<CardTitle className="line-clamp-2 text-lg group-hover:text-orange-500 transition-colors h-14">
 												{book.title}
 											</CardTitle>
 											<CardDescription className="line-clamp-1">
