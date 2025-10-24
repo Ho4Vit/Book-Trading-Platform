@@ -3,6 +3,7 @@ package btp.bookingtradeplatform.Service;
 import btp.bookingtradeplatform.Exception.AppException;
 import btp.bookingtradeplatform.Exception.BusinessException;
 import btp.bookingtradeplatform.Model.Entity.DiscountCode;
+import btp.bookingtradeplatform.Model.Request.DiscountRequest;
 import btp.bookingtradeplatform.Model.Response.ResponseData;
 import btp.bookingtradeplatform.Repository.DiscountCodeRepository;
 import jakarta.transaction.Transactional;
@@ -60,22 +61,27 @@ public class DiscountCodeService {
     /**
      * 🔹 Lấy danh sách mã giảm giá hợp lệ cho người dùng
      */
-    public ResponseEntity<ResponseData<List<DiscountCode>>> getAvailableDiscountsForUser(Long userId, BigDecimal orderValue) {
+    public ResponseEntity<ResponseData<List<DiscountCode>>> getAvailableDiscounts(DiscountRequest request) {
         deactivateExpiredDiscounts();
 
+        Long userId = request.getUserId();
+        Long bookId = request.getBookId();
+        BigDecimal orderValue = request.getOrderValue();
         LocalDateTime now = LocalDateTime.now();
+
         List<DiscountCode> validCodes = discountCodeRepository.findAll().stream()
                 .filter(code ->
                         code.isActive()
                                 && (code.getExpiryDate() == null || code.getExpiryDate().isAfter(now))
                                 && (code.getMinOrderValue() == null || orderValue.compareTo(code.getMinOrderValue()) >= 0)
                                 && (code.getProvidedUserIds() == null || !code.getProvidedUserIds().contains(userId))
+                                && (code.getApplicableBookIds() == null || code.getApplicableBookIds().contains(bookId))
                 )
                 .toList();
 
-        if (validCodes.isEmpty()) {
-            throw new BusinessException(AppException.NOT_FOUND);
-        }
+//        if (validCodes.isEmpty()) {
+//            throw new BusinessException(AppException.NOT_FOUND);
+//        }
 
         return ResponseEntity.ok(new ResponseData<>(
                 AppException.SUCCESS.getCode(),
@@ -121,5 +127,20 @@ public class DiscountCodeService {
                 allCodes
         ));
     }
+
+    public ResponseEntity<ResponseData<DiscountCode>> updateApplicableBooks(Long discountId, List<Long> bookIds) {
+        DiscountCode discountCode = discountCodeRepository.findById(discountId)
+                .orElseThrow(() -> new BusinessException(AppException.NOT_FOUND));
+
+        discountCode.setApplicableBookIds(bookIds);
+
+        discountCodeRepository.save(discountCode);
+        return ResponseEntity.ok(new ResponseData<>(
+                AppException.SUCCESS.getCode(),
+                "Updated applicable books successfully",
+                discountCode
+        ));
+    }
+
 
 }

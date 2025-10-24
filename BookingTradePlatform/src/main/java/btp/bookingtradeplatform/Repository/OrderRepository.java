@@ -1,11 +1,22 @@
 package btp.bookingtradeplatform.Repository;
 
 import btp.bookingtradeplatform.Model.Entity.Order;
+import btp.bookingtradeplatform.Model.Enum.OrderStatus;
+import io.lettuce.core.dynamic.annotation.Param;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 
 import java.util.List;
 
 public interface OrderRepository extends JpaRepository<Order, Long> {
     List<Order> findByCustomerId(Long customerId) ;
     // Custom query methods can be defined here if needed
+    @Query("SELECT DISTINCT o FROM Order o " +
+            "JOIN o.orderItems ci " +
+            "JOIN ci.book b " +
+            "WHERE b.seller.id = :sellerId AND o.status = :status")
+    List<Order> findOrdersBySellerIdAndStatus(
+            @Param("sellerId") Long sellerId,
+            @Param("status") OrderStatus status
+    );
 }

@@ -4,6 +4,7 @@ import btp.bookingtradeplatform.Exception.AppException;
 import btp.bookingtradeplatform.Exception.BusinessException;
 import btp.bookingtradeplatform.Model.DTO.FeedbackDTO;
 import btp.bookingtradeplatform.Model.Entity.Feedback;
+import btp.bookingtradeplatform.Model.Response.AvarageRating;
 import btp.bookingtradeplatform.Model.Response.ResponseData;
 import btp.bookingtradeplatform.Repository.FeedbackRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -69,15 +70,31 @@ public class FeedbackService {
         ));
     }
 
-    // ✅ Tính trung bình rating của một cuốn sách theo bookId
-    public ResponseEntity<ResponseData<Double>> getAverageRatingByBook(Long bookId) {
+    public ResponseEntity<ResponseData<List<FeedbackDTO>>> getFeedbacksByBookId(Long bookId) {
+        List<FeedbackDTO> feedbacks = feedbackRepository.findAllByBookId(bookId)
+                .stream()
+                .map(FeedbackDTO::fromEntity)
+                .collect(Collectors.toList());
+
+        return ResponseEntity.ok(new ResponseData<>(
+                AppException.SUCCESS.getCode(),
+                "Fetched feedbacks for the book successfully",
+                feedbacks
+        ));
+    }
+
+    public ResponseEntity<ResponseData<AvarageRating>> getAverageRatingByBook(Long bookId) {
         List<Feedback> feedbacks = feedbackRepository.findAllByBookId(bookId);
 
+        AvarageRating result = new AvarageRating();
+
         if (feedbacks.isEmpty()) {
+            result.setAverageRating(0.0);
+            result.setCount(0);
             return ResponseEntity.ok(new ResponseData<>(
                     AppException.SUCCESS.getCode(),
                     "No feedback found for this book",
-                    0.0
+                    result
             ));
         }
 
@@ -86,10 +103,14 @@ public class FeedbackService {
                 .average()
                 .orElse(0.0);
 
+        result.setAverageRating(average);
+        result.setCount(feedbacks.size());
+
         return ResponseEntity.ok(new ResponseData<>(
                 AppException.SUCCESS.getCode(),
                 "Average rating calculated successfully",
-                average
+                result
         ));
     }
+
 }

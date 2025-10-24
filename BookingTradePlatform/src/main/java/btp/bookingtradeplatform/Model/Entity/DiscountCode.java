@@ -33,4 +33,9 @@ public class DiscountCode {
     @CollectionTable(name = "discount_provided_users", joinColumns = @JoinColumn(name = "discount_id"))
     @Column(name = "user_id")
     private List<Long> providedUserIds;
+
+    @ElementCollection
+    @CollectionTable(name = "discount_books", joinColumns = @JoinColumn(name = "discount_id"))
+    @Column(name = "book_id")
+    private List<Long> applicableBookIds;
 }

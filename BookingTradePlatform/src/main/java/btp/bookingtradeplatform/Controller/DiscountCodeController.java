@@ -1,6 +1,8 @@
 package btp.bookingtradeplatform.Controller;
 
 import btp.bookingtradeplatform.Model.Entity.DiscountCode;
+import btp.bookingtradeplatform.Model.Request.ApplicableBooks;
+import btp.bookingtradeplatform.Model.Request.DiscountRequest;
 import btp.bookingtradeplatform.Model.Response.ResponseData;
 import btp.bookingtradeplatform.Service.DiscountCodeService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,13 +22,13 @@ public class DiscountCodeController {
     /**
      * 🔹 Lấy tất cả mã giảm giá hợp lệ cho user theo giá trị đơn hàng
      */
-    @GetMapping("/available")
+    @PostMapping("/available")
     public ResponseEntity<ResponseData<List<DiscountCode>>> getAvailableDiscounts(
-            @RequestParam Long userId,
-            @RequestParam BigDecimal orderValue
+            @RequestBody DiscountRequest request
     ) {
-        return discountCodeService.getAvailableDiscountsForUser(userId, orderValue);
+        return discountCodeService.getAvailableDiscounts(request);
     }
+
 
     /**
      * 🔹 Thêm userId vào danh sách đã dùng mã giảm giá (không kiểm tra)
@@ -63,6 +65,14 @@ public class DiscountCodeController {
     @GetMapping("/all")
     public ResponseEntity<ResponseData<List<DiscountCode>>> getAllDiscounts() {
         return discountCodeService.getAllDiscountCodes();
+    }
+
+    @PutMapping("books-applicable/{discountId}")
+    public ResponseEntity<ResponseData<DiscountCode>> updateApplicableBooks(
+            @PathVariable Long discountId,
+            @RequestBody ApplicableBooks request
+    ) {
+        return discountCodeService.updateApplicableBooks(discountId, request.getBookIds());
     }
 
 }

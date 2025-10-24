@@ -2,6 +2,7 @@ package btp.bookingtradeplatform.Controller;
 
 import btp.bookingtradeplatform.Model.DTO.FeedbackDTO;
 import btp.bookingtradeplatform.Model.Entity.Feedback;
+import btp.bookingtradeplatform.Model.Response.AvarageRating;
 import btp.bookingtradeplatform.Model.Response.ResponseData;
 import btp.bookingtradeplatform.Service.FeedbackService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -43,7 +44,12 @@ public class FeedbackController {
 
     // ✅ Lấy trung bình rating của một sách
     @GetMapping("/average-rating/{bookId}")
-    public ResponseEntity<ResponseData<Double>> getAverageRatingByBook(@PathVariable Long bookId) {
+    public ResponseEntity<ResponseData<AvarageRating>> getAverageRatingByBook(@PathVariable Long bookId) {
         return feedbackService.getAverageRatingByBook(bookId);
+    }
+
+    @GetMapping("/book/{bookId}")
+    public ResponseEntity<ResponseData<List<FeedbackDTO>>> getFeedbacksByBookId(@PathVariable Long bookId) {
+        return feedbackService.getFeedbacksByBookId(bookId);
     }
 }

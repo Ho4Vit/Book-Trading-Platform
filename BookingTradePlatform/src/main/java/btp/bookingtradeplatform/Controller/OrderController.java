@@ -53,4 +53,11 @@ public class OrderController {
     public ResponseEntity<ResponseData<Void>> cancelOrder(@PathVariable Long id) {
         return orderService.CancelOrder(id);
     }
+
+    @GetMapping("/seller/pending/{sellerId}")
+    public ResponseEntity<ResponseData<List<OrderDTO>>> getPendingOrdersBySeller(
+            @PathVariable Long sellerId) {
+        return orderService.getOrdersBySellerId(sellerId);
+    }
+
 }
