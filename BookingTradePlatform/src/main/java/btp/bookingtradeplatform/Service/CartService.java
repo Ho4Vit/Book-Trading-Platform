@@ -137,7 +137,7 @@ public class CartService {
                 .orElseThrow(() -> new BusinessException(AppException.CUSTOMER_NOT_FOUND));
 
         Cart cart = cartRepository.findByUserId(customer.getId())
-                .orElseThrow(() -> new BusinessException(AppException.CART_EMPTY));
+                .orElse(null);
 
         return ResponseEntity
                 .status(AppException.SUCCESS.getHttpStatus())

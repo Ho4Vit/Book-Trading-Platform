@@ -40,6 +40,8 @@ public class Order {
     private List<CartItem> orderItems;
 
 
+    private boolean Paid = false;
+
     @PrePersist
     public void prePersist() {
         if (transactionId == null) {

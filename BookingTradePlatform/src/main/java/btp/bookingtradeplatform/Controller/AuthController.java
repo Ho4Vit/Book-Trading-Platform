@@ -54,4 +54,9 @@ public class AuthController {
         String otpInput = veryfiedOTPRequest.getOtpInput();
         return mailSenderService.verifyOtp(email, otpInput);
     }
+
+    @PostMapping("/refresh")
+    public ResponseEntity<ResponseData<AuthDTO>> refreshToken(@RequestParam("refreshToken") String refreshToken) {
+        return authService.refreshToken(refreshToken);
+    }
 }

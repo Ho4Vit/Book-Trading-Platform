@@ -8,6 +8,7 @@ import btp.bookingtradeplatform.Model.Entity.CartItem;
 import btp.bookingtradeplatform.Model.Entity.Order;
 import btp.bookingtradeplatform.Model.Entity.Payment;
 import btp.bookingtradeplatform.Model.Enum.OrderStatus;
+import btp.bookingtradeplatform.Model.Enum.PaymentMethod;
 import btp.bookingtradeplatform.Model.Enum.PaymentStatus;
 import btp.bookingtradeplatform.Model.Request.CreatePaymentRequest;
 import btp.bookingtradeplatform.Model.Response.ResponseData;
@@ -23,6 +24,8 @@ import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
+
 @Transactional
 @Service
 public class PaymentService {
@@ -35,6 +38,9 @@ public class PaymentService {
 
     @Autowired
     private OrderRepository orderRepository;
+
+    @Autowired
+    private VnPayService vnPayService;
 
     public ResponseEntity<ResponseData<List<PaymentDTO>>> getAllPayments() {
         List<Payment> list = paymentRepository.findAll();
@@ -108,6 +114,67 @@ public class PaymentService {
                 AppException.SUCCESS.getCode(),
                 "Payment confirmed successfully",
                 null
+        ));
+    }
+
+    @Transactional
+    public ResponseEntity<ResponseData<String>> createVnPayPayment(Long orderId) {
+
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new BusinessException(AppException.ORDER_NOT_FOUND));
+
+        // Tạo payment trong DB
+        Payment payment = new Payment();
+        payment.setOrder(order);
+        payment.setAmount(order.getTotalPrice());
+        payment.setPaymentDate(LocalDateTime.now());
+        payment.setStatus(PaymentStatus.PENDING);
+        payment.setMethod(PaymentMethod.VNPAY);
+
+        paymentRepository.save(payment);
+
+        String transactionId = order.getTransactionId();
+        // Sinh URL thanh toán VNPay
+        String payUrl = vnPayService.createPaymentUrl(transactionId, order.getTotalPrice().longValue());
+
+        return ResponseEntity.ok(new ResponseData<>(
+                AppException.SUCCESS.getCode(),
+                "VNPay URL generated",
+                payUrl
+        ));
+    }
+
+
+    // Callback từ VNPay
+    @Transactional
+    public ResponseEntity<ResponseData<String>> handleVnPayReturn(Map<String, String> params) {
+
+        String responseCode = params.get("vnp_ResponseCode"); // "00" = success
+        String transactionId = String.valueOf(params.get("vnp_TxnRef"));
+
+        Order order = orderRepository.findByTransactionId(transactionId)
+                .orElseThrow(() -> new BusinessException(AppException.ORDER_NOT_FOUND));
+
+        Payment payment = paymentRepository.findByOrder(order);
+
+        if (payment == null) {
+            throw new BusinessException(AppException.NOT_FOUND);
+        }
+
+        if ("00".equals(responseCode)) {
+            payment.setStatus(PaymentStatus.SUCCESS);
+            order.setPaid(true);
+        } else {
+            payment.setStatus(PaymentStatus.FAILED);
+        }
+
+        paymentRepository.save(payment);
+        orderRepository.save(order);
+
+        return ResponseEntity.ok(new ResponseData<>(
+                AppException.SUCCESS.getCode(),
+                "Payment updated from VNPay",
+                responseCode
         ));
     }
 }

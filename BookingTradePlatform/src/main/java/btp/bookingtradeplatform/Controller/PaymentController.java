@@ -53,20 +53,14 @@ public class PaymentController {
         return paymentService.confirmPayment(paymentId);
     }
 
-    // ✅ Tạo thanh toán MoMo
-    @PostMapping("/momo/create")
-    public ResponseEntity<?> createMomoPayment(@RequestBody MomoPaymentRequest request) {
-        try {
-            MomoPaymentResponse response = momoService.createPayment(request);
-            return ResponseEntity.ok(response);
-        } catch (Exception e) {
-            return ResponseEntity.internalServerError().body(Map.of("error", e.getMessage()));
-        }
+
+    @PostMapping("/vnpay/{orderId}")
+    public ResponseEntity<ResponseData<String>> createVnPayPayment(@PathVariable Long orderId) {
+        return paymentService.createVnPayPayment(orderId);
     }
 
-    // ✅ Xử lý callback từ MoMo
-    @PostMapping("/momo/callback")
-    public ResponseEntity<String> handleMomoCallback(@RequestBody Map<String, Object> data) {
-        return ResponseEntity.ok(momoService.handleCallback(data));
+    @GetMapping("/vnpay-return")
+    public ResponseEntity<ResponseData<String>> vnPayReturn(@RequestParam Map<String, String> params) {
+        return paymentService.handleVnPayReturn(params);
     }
 }

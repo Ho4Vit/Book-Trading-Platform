@@ -31,7 +31,9 @@ import org.springframework.stereotype.Service;
 
 import java.util.Collections;
 import java.util.Date;
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Transactional
 @Service
@@ -62,6 +64,9 @@ public class AuthService {
     private MailSenderService mailSenderService;
     @Autowired
     private PasswordEncoder passwordEncoder;
+
+    @Autowired
+    private CustomUserDetailsService customUserDetailsService;
 
     @Autowired
     private UserDetailsService userDetailsService;
@@ -203,4 +208,78 @@ public class AuthService {
                     ));
         }
     }
+
+    public ResponseEntity<ResponseData<AuthDTO>> refreshToken(String oldRefreshToken) {
+        // 1. Kiểm tra token có bị blacklist không
+        if (tokenBlacklistService.isTokenBlacklisted(oldRefreshToken)) {
+            return ResponseEntity
+                    .status(AppException.TOKEN_INVALID.getHttpStatus())
+                    .body(new ResponseData<>(
+                            AppException.TOKEN_INVALID.getCode(),
+                            "Refresh token không hợp lệ hoặc đã bị thu hồi",
+                            null
+                    ));
+        }
+
+        try {
+            // 2. Parse token cũ
+            Claims claims = Jwts.parserBuilder()
+                    .setSigningKey(jwtProvider.getKey())
+                    .build()
+                    .parseClaimsJws(oldRefreshToken)
+                    .getBody();
+
+            String username = claims.getSubject();
+            @SuppressWarnings("unchecked")
+            var roles = (List<String>) claims.get("roles"); // lấy roles từ payload
+
+            UserDetails userDetails = customUserDetailsService.loadUserByUsername(username);
+
+            // Lấy User từ DB để có userId và role enum
+            User user = userRepository.findByUsername(username)
+                    .orElseThrow(() -> new RuntimeException("User not found"));
+
+            // Tạo token mới
+            String newAccessToken = jwtProvider.generateToken(userDetails);
+            String newRefreshToken = jwtProvider.generateRefreshTokenWithRoles(username, roles);
+
+            // Blacklist token cũ
+            long ttl = claims.getExpiration().getTime() - System.currentTimeMillis();
+            tokenBlacklistService.blacklistToken(oldRefreshToken, ttl);
+
+            // Trả về AuthDTO với access token mới, role và userId
+            AuthDTO authDTO = AuthDTO.builder()
+                    .token(newAccessToken)
+                    .role(user.getRole())
+                    .userId(user.getId())
+                    .build();
+
+            return ResponseEntity
+                    .status(AppException.SUCCESS.getHttpStatus())
+                    .body(new ResponseData<>(
+                            AppException.SUCCESS.getCode(),
+                            "Refresh token thành công",
+                            authDTO
+                    ));
+
+        } catch (io.jsonwebtoken.ExpiredJwtException e) {
+            return ResponseEntity
+                    .status(AppException.TOKEN_EXPIRED.getHttpStatus())
+                    .body(new ResponseData<>(
+                            AppException.TOKEN_EXPIRED.getCode(),
+                            "Refresh token đã hết hạn",
+                            null
+                    ));
+        } catch (Exception e) {
+            return ResponseEntity
+                    .status(AppException.TOKEN_INVALID.getHttpStatus())
+                    .body(new ResponseData<>(
+                            AppException.TOKEN_INVALID.getCode(),
+                            "Refresh token không hợp lệ",
+                            null
+                    ));
+        }
+    }
+
+
 }
