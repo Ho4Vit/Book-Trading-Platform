@@ -21,4 +21,45 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     );
     
     Optional<Order> findByTransactionId(String transactionId);
+
+    @Query("""
+        SELECT o FROM Order o
+        JOIN o.orderItems ci
+        JOIN ci.book b
+        WHERE o.Paid = true
+        AND b.seller.id = :sellerId
+    """)
+    List<Order> findPaidOrdersBySeller(Long sellerId);
+
+
+    // Lấy theo tháng + năm
+    @Query("""
+        SELECT o FROM Order o
+        JOIN o.orderItems ci
+        JOIN ci.book b
+        WHERE o.Paid = true
+        AND b.seller.id = :sellerId
+        AND MONTH(o.orderDate) = :month
+        AND YEAR(o.orderDate) = :year
+    """)
+    List<Order> findPaidOrdersBySellerAndMonth(
+            Long sellerId,
+            int month,
+            int year
+    );
+
+
+    // Lấy theo năm
+    @Query("""
+        SELECT o FROM Order o
+        JOIN o.orderItems ci
+        JOIN ci.book b
+        WHERE o.Paid = true
+        AND b.seller.id = :sellerId
+        AND YEAR(o.orderDate) = :year
+    """)
+    List<Order> findPaidOrdersBySellerAndYear(
+            Long sellerId,
+            int year
+    );
 }

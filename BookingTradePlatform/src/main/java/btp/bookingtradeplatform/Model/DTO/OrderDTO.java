@@ -23,6 +23,7 @@ public class OrderDTO {
     private OrderStatus status;
     private LocalDateTime orderDate;
     private String transactionId;
+    private boolean paid;
 
     public static OrderDTO fromEntity(Order order) {
         return OrderDTO.builder()
@@ -35,6 +36,7 @@ public class OrderDTO {
                 .status(order.getStatus())
                 .orderDate(order.getOrderDate())
                 .transactionId(order.getTransactionId())
+                .paid(order.isPaid())
                 .build();
     }
 }
