@@ -108,7 +108,7 @@ public class PaymentService {
         Order order = payment.getOrder();
         payment.setStatus(PaymentStatus.SUCCESS);
         paymentRepository.save(payment);
-        order.setStatus(OrderStatus.CONFIRMED);
+        order.setPaid(true);
         orderService.decreaseStockForOrder(order);
         return ResponseEntity.ok(new ResponseData<>(
                 AppException.SUCCESS.getCode(),

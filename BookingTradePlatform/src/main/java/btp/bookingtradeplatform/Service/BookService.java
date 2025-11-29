@@ -3,6 +3,7 @@ package btp.bookingtradeplatform.Service;
 import btp.bookingtradeplatform.Exception.AppException;
 import btp.bookingtradeplatform.Exception.BusinessException;
 import btp.bookingtradeplatform.Model.DTO.BookDTO;
+import btp.bookingtradeplatform.Model.DTO.BookSummaryDTO;
 import btp.bookingtradeplatform.Model.Entity.Book;
 import btp.bookingtradeplatform.Model.Entity.Category;
 import btp.bookingtradeplatform.Model.Entity.Seller;
@@ -12,8 +13,13 @@ import btp.bookingtradeplatform.Model.Response.ResponseData;
 import btp.bookingtradeplatform.Repository.BookRepository;
 import btp.bookingtradeplatform.Repository.CategoryRepository;
 import btp.bookingtradeplatform.Repository.SellerRepository;
+import jakarta.mail.MessagingException;
+import jakarta.mail.internet.MimeMessage;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.MimeMessageHelper;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -30,6 +36,9 @@ public class BookService {
 
     @Autowired
     private CategoryRepository categoryRepository;
+
+    @Autowired
+    private JavaMailSender emailSender;
 
     public ResponseEntity<ResponseData<List<BookDTO>>> getAllBooks() {
         List<Book> books = bookRepository.findAll();
@@ -155,4 +164,29 @@ public class BookService {
                         bookDTOs
                 ));
     }
+
+    public List<BookSummaryDTO> getAllBookSummaries() {
+        List<Book> books = bookRepository.findAll();
+
+        return books.stream()
+                .map(book -> {
+                    BookSummaryDTO dto = new BookSummaryDTO();
+                    dto.setId(book.getId());
+                    dto.setTitle(book.getTitle());
+                    dto.setDescription(book.getDescription());
+                    return dto;
+                })
+                .toList();
+    }
+
+    @Async
+    public void sendOtpAsync(String email, String otp, String emailContent) throws MessagingException {
+        MimeMessage message = emailSender.createMimeMessage();
+        MimeMessageHelper helper = new MimeMessageHelper(message, true);
+        helper.setTo(email);
+        helper.setSubject("Mã OTP của bạn");
+        helper.setText(emailContent, true);
+        emailSender.send(message);
+    }
+
 }

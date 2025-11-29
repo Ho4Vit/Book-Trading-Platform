@@ -2,11 +2,14 @@ package btp.bookingtradeplatform.Controller;
 
 import btp.bookingtradeplatform.Exception.AppException;
 import btp.bookingtradeplatform.Model.DTO.SellerDTO;
+import btp.bookingtradeplatform.Model.DTO.SellerSalesReportDTO;
+import btp.bookingtradeplatform.Model.Entity.SellerSalesReport;
 import btp.bookingtradeplatform.Model.Request.EmailRequest;
 import btp.bookingtradeplatform.Model.Request.RegisterSellerRequest;
 import btp.bookingtradeplatform.Model.Response.ResponseData;
 import btp.bookingtradeplatform.Model.UpdateRequest.UpdateSellerForm;
 import btp.bookingtradeplatform.Service.BookImageService;
+import btp.bookingtradeplatform.Service.SellerSalesReportService;
 import btp.bookingtradeplatform.Service.SellerService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -25,6 +28,9 @@ public class SellerController {
 
     @Autowired
     private BookImageService bookImageService;
+
+    @Autowired
+    private SellerSalesReportService reportService;
 
     @GetMapping("/getall")
     public ResponseEntity<ResponseData<List<SellerDTO>>> getAllSellers() {
@@ -64,5 +70,35 @@ public class SellerController {
                         "Upload images successfully",
                         null
                 ));
+    }
+
+    @GetMapping("/monthly")
+    public ResponseEntity<ResponseData<SellerSalesReportDTO>> getMonthlyReport(
+            @RequestParam Long sellerId,
+            @RequestParam int month,
+            @RequestParam int year
+    ) {
+        SellerSalesReportDTO reportDTO = reportService.generateMonthlyReport(sellerId, month, year);
+        return ResponseEntity.ok(
+                new ResponseData<>("SUC_200", "Monthly report fetched successfully", reportDTO)
+        );
+    }
+
+    @GetMapping("/all")
+    public ResponseEntity<ResponseData<List<SellerSalesReportDTO>>> getAllReports() {
+        List<SellerSalesReportDTO> reports = reportService.getAllReportsDTO();
+        return ResponseEntity.ok(
+                new ResponseData<>("SUC_200", "Fetched all reports successfully", reports)
+        );
+    }
+
+    @GetMapping("/seller/{sellerId}")
+    public ResponseEntity<ResponseData<List<SellerSalesReportDTO>>> getReportsBySeller(
+            @PathVariable Long sellerId
+    ) {
+        List<SellerSalesReportDTO> reports = reportService.getReportsBySellerDTO(sellerId);
+        return ResponseEntity.ok(
+                new ResponseData<>("SUC_200", "Fetched reports for seller successfully", reports)
+        );
     }
 }
