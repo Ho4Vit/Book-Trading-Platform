@@ -27,7 +27,7 @@ import {
     TableRow,
 } from "@/components/ui/table";
 import {
-    BarChart,
+    BarChart as BarChartIcon,
     DollarSign,
     Package,
     BookOpen,
@@ -35,6 +35,22 @@ import {
     TrendingDown,
     Activity,
 } from "lucide-react";
+// Import Recharts components
+import {
+    BarChart,
+    Bar,
+    XAxis,
+    YAxis,
+    CartesianGrid,
+    Tooltip,
+    Legend,
+    ResponsiveContainer,
+    PieChart,
+    Pie,
+    Cell,
+} from "recharts";
+
+const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042", "#8884d8", "#82ca9d"];
 
 export default function SellerStatistics() {
     const { userId } = useAuthStore();
@@ -44,8 +60,8 @@ export default function SellerStatistics() {
     const [selectedMonth, setSelectedMonth] = useState(currentMonth.toString());
     const [selectedYear, setSelectedYear] = useState(currentYear.toString());
 
-    // Fetch monthly statistics
-    const { data: monthlyStatsData, isLoading } = useCustomQuery(
+    // 1. Fetch statistics for the selected specific month
+    const { data: monthlyStatsData, isLoading: isLoadingMonthly } = useCustomQuery(
         ["seller-statistics-monthly", userId, selectedMonth, selectedYear],
         () => sellerApi.staticsSellerMonthly(userId, parseInt(selectedMonth), parseInt(selectedYear)),
         {
@@ -53,49 +69,89 @@ export default function SellerStatistics() {
         }
     );
 
-    // Parse statistics data
+    // 2. Fetch statistics for ALL months in the selected year (for the Bar Chart)
+    const { data: yearlyStatsData, isLoading: isLoadingYearly } = useCustomQuery(
+        ["seller-statistics-yearly", userId, selectedYear],
+        async () => {
+            // Create 12 promises to fetch data for each month
+            const promises = Array.from({ length: 12 }, (_, i) =>
+                sellerApi.staticsSellerMonthly(userId, i + 1, parseInt(selectedYear))
+                    .catch(() => ({ totalRevenue: 0 })) // Handle errors gracefully
+            );
+            return Promise.all(promises);
+        },
+        {
+            enabled: !!userId,
+        }
+    );
+
+    // Process specific month stats
     const monthlyStats = useMemo(() => {
         return monthlyStatsData || null;
     }, [monthlyStatsData]);
 
-    // Get top selling books sorted by quantity (descending)
+    // Process top books for the Pie Chart
     const topBooks = useMemo(() => {
         if (!monthlyStats || !monthlyStats.bookSales) {
             return [];
         }
-        // Sort books by quantity in descending order
         return [...monthlyStats.bookSales].sort((a, b) => b.quantity - a.quantity);
     }, [monthlyStats]);
 
-    // Display data
+    // Data for Pie Chart (Top 5 books + Others)
+    const pieChartData = useMemo(() => {
+        if (topBooks.length === 0) return [];
+
+        const top5 = topBooks.slice(0, 5).map(book => ({
+            name: book.bookTitle.length > 20 ? book.bookTitle.substring(0, 20) + '...' : book.bookTitle,
+            value: book.quantity
+        }));
+
+        const othersCount = topBooks.slice(5).reduce((acc, curr) => acc + curr.quantity, 0);
+
+        if (othersCount > 0) {
+            top5.push({ name: 'Khác', value: othersCount });
+        }
+
+        return top5;
+    }, [topBooks]);
+
+    // Data for Bar Chart (Revenue across 12 months)
+    const revenueChartData = useMemo(() => {
+        if (!Array.isArray(yearlyStatsData)) return [];
+
+        return yearlyStatsData.map((stat, index) => {
+            const actualData = stat?.data || stat;
+
+            return {
+                name: `Tháng ${index + 1}`,
+                revenue: actualData?.totalRevenue || 0,
+                sold: actualData?.totalSold || 0
+            };
+        });
+    }, [yearlyStatsData]);
+
     const displayRevenue = monthlyStats?.totalRevenue || 0;
     const displaySold = monthlyStats?.totalSold || 0;
 
-    // Generate month options for the last 12 months
-    const monthOptions = Array.from({ length: 12 }, (_, i) => {
-        const month = i + 1;
-        return {
-            value: month.toString(),
-            label: `Tháng ${month}`,
-        };
-    });
+    const monthOptions = Array.from({ length: 12 }, (_, i) => ({
+        value: (i + 1).toString(),
+        label: `Tháng ${i + 1}`,
+    }));
 
-    // Generate year options (current year and 2 years back)
-    const yearOptions = Array.from({ length: 3 }, (_, i) => {
-        const year = currentYear - i;
-        return {
-            value: year.toString(),
-            label: `Năm ${year}`,
-        };
-    });
+    const yearOptions = Array.from({ length: 3 }, (_, i) => ({
+        value: (currentYear - i).toString(),
+        label: `Năm ${currentYear - i}`,
+    }));
 
-    // Format currency
     const formatCurrency = (amount) => {
         return new Intl.NumberFormat("vi-VN", {
             style: "currency",
             currency: "VND",
         }).format(amount);
     };
+
+    const isLoading = isLoadingMonthly || isLoadingYearly;
 
     if (isLoading) {
         return (
@@ -106,7 +162,10 @@ export default function SellerStatistics() {
                         <Skeleton key={i} className="h-32" />
                     ))}
                 </div>
-                <Skeleton className="h-96" />
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <Skeleton className="h-96" />
+                    <Skeleton className="h-96" />
+                </div>
             </div>
         );
     }
@@ -117,22 +176,22 @@ export default function SellerStatistics() {
             <div className="flex items-center justify-between">
                 <div>
                     <h1 className="text-3xl font-bold flex items-center gap-3">
-                        <BarChart className="w-8 h-8 text-primary" />
+                        <BarChartIcon className="w-8 h-8 text-primary" />
                         Thống Kê Bán Hàng
                     </h1>
                     <p className="text-muted-foreground mt-1">
-                        Theo dõi doanh thu và hiệu suất bán hàng theo tháng
+                        Theo dõi doanh thu và hiệu suất bán hàng
                     </p>
                 </div>
             </div>
 
-            {/* Monthly Filter */}
+            {/* Filter */}
             <Card>
                 <CardContent className="pt-6">
                     <div className="flex items-center gap-4">
                         <div className="flex items-center gap-2">
                             <Calendar className="w-4 h-4 text-muted-foreground" />
-                            <span className="text-sm font-medium">Chọn kỳ:</span>
+                            <span className="text-sm font-medium">Thời gian:</span>
                         </div>
                         <Select value={selectedMonth} onValueChange={setSelectedMonth}>
                             <SelectTrigger className="w-32">
@@ -162,13 +221,12 @@ export default function SellerStatistics() {
                 </CardContent>
             </Card>
 
-            {/* Statistics Cards */}
+            {/* KPI Cards */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                {/* Total Revenue */}
-                <Card className="border-2 hover:shadow-lg transition-shadow">
+                <Card className="border-l-4 border-l-green-500 hover:shadow-md transition-shadow">
                     <CardHeader className="flex flex-row items-center justify-between pb-2">
-                        <CardTitle className="text-sm font-medium">
-                            Doanh thu tháng
+                        <CardTitle className="text-sm font-medium text-muted-foreground">
+                            Doanh thu tháng {selectedMonth}
                         </CardTitle>
                         <DollarSign className="w-5 h-5 text-green-600" />
                     </CardHeader>
@@ -176,34 +234,26 @@ export default function SellerStatistics() {
                         <div className="text-2xl font-bold text-green-600">
                             {formatCurrency(displayRevenue)}
                         </div>
-                        <p className="text-xs text-muted-foreground mt-1">
-                            Tháng {selectedMonth}/{selectedYear}
-                        </p>
                     </CardContent>
                 </Card>
 
-                {/* Total Sold */}
-                <Card className="border-2 hover:shadow-lg transition-shadow">
+                <Card className="border-l-4 border-l-blue-500 hover:shadow-md transition-shadow">
                     <CardHeader className="flex flex-row items-center justify-between pb-2">
-                        <CardTitle className="text-sm font-medium">
-                            Sách bán ra
+                        <CardTitle className="text-sm font-medium text-muted-foreground">
+                            Đã bán tháng {selectedMonth}
                         </CardTitle>
                         <Package className="w-5 h-5 text-blue-600" />
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold text-blue-600">
-                            {displaySold.toLocaleString("vi-VN")}
+                            {displaySold.toLocaleString("vi-VN")} <span className="text-sm font-normal text-muted-foreground">cuốn</span>
                         </div>
-                        <p className="text-xs text-muted-foreground mt-1">
-                            Sách đã bán
-                        </p>
                     </CardContent>
                 </Card>
 
-                {/* Average Revenue per Book */}
-                <Card className="border-2 hover:shadow-lg transition-shadow">
+                <Card className="border-l-4 border-l-purple-500 hover:shadow-md transition-shadow">
                     <CardHeader className="flex flex-row items-center justify-between pb-2">
-                        <CardTitle className="text-sm font-medium">
+                        <CardTitle className="text-sm font-medium text-muted-foreground">
                             Giá TB/Sách
                         </CardTitle>
                         <BookOpen className="w-5 h-5 text-purple-600" />
@@ -214,17 +264,13 @@ export default function SellerStatistics() {
                                 ? formatCurrency(displayRevenue / displaySold)
                                 : formatCurrency(0)}
                         </div>
-                        <p className="text-xs text-muted-foreground mt-1">
-                            Doanh thu trung bình
-                        </p>
                     </CardContent>
                 </Card>
 
-                {/* Number of Book Types */}
-                <Card className="border-2 hover:shadow-lg transition-shadow">
+                <Card className="border-l-4 border-l-amber-500 hover:shadow-md transition-shadow">
                     <CardHeader className="flex flex-row items-center justify-between pb-2">
-                        <CardTitle className="text-sm font-medium">
-                            Số loại sách
+                        <CardTitle className="text-sm font-medium text-muted-foreground">
+                            Số đầu sách bán được
                         </CardTitle>
                         <Activity className="w-5 h-5 text-amber-600" />
                     </CardHeader>
@@ -232,22 +278,108 @@ export default function SellerStatistics() {
                         <div className="text-2xl font-bold text-amber-600">
                             {topBooks.length}
                         </div>
-                        <p className="text-xs text-muted-foreground mt-1">
-                            Sách khác nhau
-                        </p>
                     </CardContent>
                 </Card>
             </div>
 
-            {/* Top Selling Books */}
+            {/* Charts Section */}
+            <div className="grid grid-cols-1 lg:grid-cols-7 gap-6">
+                {/* Bar Chart: Yearly Revenue Trend */}
+                <Card className="lg:col-span-4">
+                    <CardHeader>
+                        <CardTitle>Biểu đồ doanh thu năm {selectedYear}</CardTitle>
+                        <CardDescription>
+                            Tổng doanh thu theo từng tháng
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="h-[350px] w-full">
+                            <ResponsiveContainer width="100%" height="100%">
+                                <BarChart data={revenueChartData}>
+                                    <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                                    <XAxis
+                                        dataKey="name"
+                                        tick={{ fontSize: 12 }}
+                                        interval={0}
+                                        tickFormatter={(value, index) => (index % 2 === 0 ? value : '')} // Show every other month on small screens if needed
+                                    />
+                                    <YAxis
+                                        tickFormatter={(value) =>
+                                            new Intl.NumberFormat("vi-VN", { notation: "compact", compactDisplay: "short" }).format(value)
+                                        }
+                                        tick={{ fontSize: 12 }}
+                                    />
+                                    <Tooltip
+                                        formatter={(value) => formatCurrency(value)}
+                                        labelStyle={{ color: 'black' }}
+                                    />
+                                    <Bar dataKey="revenue" fill="#0ea5e9" radius={[4, 4, 0, 0]} name="Doanh thu" />
+                                </BarChart>
+                            </ResponsiveContainer>
+                        </div>
+                    </CardContent>
+                </Card>
+
+                {/* Pie Chart: Top Selling Breakdown */}
+                <Card className="lg:col-span-3">
+                    <CardHeader>
+                        <CardTitle>Tỷ trọng sách bán chạy</CardTitle>
+                        <CardDescription>
+                            Tháng {selectedMonth}/{selectedYear}
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="h-[350px] w-full relative">
+                            {pieChartData.length > 0 ? (
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <PieChart>
+                                        <Pie
+                                            data={pieChartData}
+                                            cx="50%"
+                                            cy="50%"
+                                            labelLine={false}
+                                            label={({ cx, cy, midAngle, innerRadius, outerRadius, percent }) => {
+                                                const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
+                                                const x = cx + radius * Math.cos(-midAngle * Math.PI / 180);
+                                                const y = cy + radius * Math.sin(-midAngle * Math.PI / 180);
+                                                return percent > 0.05 ? (
+                                                    <text x={x} y={y} fill="white" textAnchor={x > cx ? 'start' : 'end'} dominantBaseline="central" className="text-xs font-bold">
+                                                        {`${(percent * 100).toFixed(0)}%`}
+                                                    </text>
+                                                ) : null;
+                                            }}
+                                            outerRadius={100}
+                                            fill="#8884d8"
+                                            dataKey="value"
+                                        >
+                                            {pieChartData.map((entry, index) => (
+                                                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                            ))}
+                                        </Pie>
+                                        <Tooltip formatter={(value) => `${value} cuốn`} />
+                                        <Legend verticalAlign="bottom" height={36} iconType="circle" />
+                                    </PieChart>
+                                </ResponsiveContainer>
+                            ) : (
+                                <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
+                                    <TrendingDown className="w-8 h-8 mb-2" />
+                                    <p>Chưa có dữ liệu</p>
+                                </div>
+                            )}
+                        </div>
+                    </CardContent>
+                </Card>
+            </div>
+
+            {/* Top Selling Books Table */}
             <Card className="border-2">
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                         <Activity className="w-5 h-5 text-primary" />
-                        Sách Bán Chạy
+                        Chi tiết sách bán chạy
                     </CardTitle>
                     <CardDescription>
-                        Top sách bán chạy tháng {selectedMonth}/{selectedYear} (sắp xếp theo số lượng)
+                        Danh sách đầy đủ cho tháng {selectedMonth}/{selectedYear}
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -272,13 +404,9 @@ export default function SellerStatistics() {
                                                 <Badge
                                                     variant={index < 3 ? "default" : "secondary"}
                                                     className={
-                                                        index === 0
-                                                            ? "bg-amber-500 hover:bg-amber-600"
-                                                            : index === 1
-                                                            ? "bg-gray-400 hover:bg-gray-500"
-                                                            : index === 2
-                                                            ? "bg-orange-600 hover:bg-orange-700"
-                                                            : ""
+                                                        index === 0 ? "bg-amber-500 hover:bg-amber-600" :
+                                                            index === 1 ? "bg-gray-400 hover:bg-gray-500" :
+                                                                index === 2 ? "bg-orange-600 hover:bg-orange-700" : ""
                                                     }
                                                 >
                                                     {index + 1}
@@ -311,4 +439,3 @@ export default function SellerStatistics() {
         </div>
     );
 }
-

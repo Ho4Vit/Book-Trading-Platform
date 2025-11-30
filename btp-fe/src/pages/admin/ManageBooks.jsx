@@ -41,12 +41,11 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { BookOpen, Plus, Edit, Trash2, Search, Eye } from "lucide-react";
+import { BookOpen, Edit, Trash2, Search } from "lucide-react";
 import toast from "react-hot-toast";
 
 export default function ManageBooks() {
     const [searchQuery, setSearchQuery] = useState("");
-    const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
     const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
     const [selectedBook, setSelectedBook] = useState(null);
@@ -78,17 +77,9 @@ export default function ManageBooks() {
     const series = seriesResponse || [];
 
     // Mutations
-    const createMutation = useCustomMutation(bookApi.createBook, {
-        onSuccess: () => {
-            toast.success("Tạo sách thành công!");
-            setIsCreateDialogOpen(false);
-            resetForm();
-            refetch();
-        },
-    });
-
     const updateMutation = useCustomMutation(
-        (data) => bookApi.updateBooks(selectedBook.bookId, data),
+        (data) => bookApi.updateBooks(selectedBook.id, data),
+        null,
         {
             onSuccess: () => {
                 toast.success("Cập nhật sách thành công!");
@@ -101,6 +92,7 @@ export default function ManageBooks() {
 
     const deleteMutation = useCustomMutation(
         (id) => bookApi.deleteBooks(id),
+        null,
         {
             onSuccess: () => {
                 toast.success("Xóa sách thành công!");
@@ -118,26 +110,6 @@ export default function ManageBooks() {
             book.author?.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
-    const resetForm = () => {
-        setBookForm({
-            title: "",
-            author: "",
-            price: "",
-            quantity: "",
-            description: "",
-            categoryId: "",
-            seriesId: "",
-        });
-    };
-
-    const handleCreate = () => {
-        createMutation.mutate({
-            ...bookForm,
-            price: parseFloat(bookForm.price),
-            quantity: parseInt(bookForm.quantity),
-        });
-    };
-
     const handleEdit = (book) => {
         setSelectedBook(book);
         setBookForm({
@@ -153,10 +125,12 @@ export default function ManageBooks() {
     };
 
     const handleUpdate = () => {
+        const { categoryId, ...restForm } = bookForm;
         updateMutation.mutate({
-            ...bookForm,
+            ...restForm,
             price: parseFloat(bookForm.price),
             quantity: parseInt(bookForm.quantity),
+            categoryIds: categoryId ? [parseInt(categoryId)] : [],
         });
     };
 
@@ -179,10 +153,6 @@ export default function ManageBooks() {
                         Quản lý tất cả sách trong hệ thống
                     </p>
                 </div>
-                <Button onClick={() => setIsCreateDialogOpen(true)} className="gap-2">
-                    <Plus className="h-4 w-4" />
-                    Thêm sách mới
-                </Button>
             </div>
 
             {/* Search */}
@@ -285,143 +255,6 @@ export default function ManageBooks() {
                     </TableBody>
                 </Table>
             </div>
-
-            {/* Create Dialog */}
-            <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-                <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-                    <DialogHeader>
-                        <DialogTitle>Thêm sách mới</DialogTitle>
-                        <DialogDescription>
-                            Nhập thông tin sách mới vào hệ thống
-                        </DialogDescription>
-                    </DialogHeader>
-                    <div className="grid gap-4 py-4">
-                        <div className="grid gap-2">
-                            <Label htmlFor="title">Tên sách *</Label>
-                            <Input
-                                id="title"
-                                value={bookForm.title}
-                                onChange={(e) =>
-                                    setBookForm({ ...bookForm, title: e.target.value })
-                                }
-                                placeholder="Nhập tên sách"
-                            />
-                        </div>
-                        <div className="grid gap-2">
-                            <Label htmlFor="author">Tác giả *</Label>
-                            <Input
-                                id="author"
-                                value={bookForm.author}
-                                onChange={(e) =>
-                                    setBookForm({ ...bookForm, author: e.target.value })
-                                }
-                                placeholder="Nhập tên tác giả"
-                            />
-                        </div>
-                        <div className="grid grid-cols-2 gap-4">
-                            <div className="grid gap-2">
-                                <Label htmlFor="price">Giá *</Label>
-                                <Input
-                                    id="price"
-                                    type="number"
-                                    value={bookForm.price}
-                                    onChange={(e) =>
-                                        setBookForm({ ...bookForm, price: e.target.value })
-                                    }
-                                    placeholder="0"
-                                />
-                            </div>
-                            <div className="grid gap-2">
-                                <Label htmlFor="quantity">Số lượng *</Label>
-                                <Input
-                                    id="quantity"
-                                    type="number"
-                                    value={bookForm.quantity}
-                                    onChange={(e) =>
-                                        setBookForm({ ...bookForm, quantity: e.target.value })
-                                    }
-                                    placeholder="0"
-                                />
-                            </div>
-                        </div>
-                        <div className="grid gap-2">
-                            <Label htmlFor="category">Danh mục</Label>
-                            <Select
-                                value={bookForm.categoryId}
-                                onValueChange={(value) =>
-                                    setBookForm({ ...bookForm, categoryId: value })
-                                }
-                            >
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Chọn danh mục" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {categories?.map((cat) => (
-                                        <SelectItem
-                                            key={cat.id}
-                                            value={cat.id.toString()}
-                                        >
-                                            {cat.name}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        </div>
-                        <div className="grid gap-2">
-                            <Label htmlFor="series">Series</Label>
-                            <Select
-                                value={bookForm.seriesId}
-                                onValueChange={(value) =>
-                                    setBookForm({ ...bookForm, seriesId: value })
-                                }
-                            >
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Chọn series" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {series?.map((s) => (
-                                        <SelectItem
-                                            key={s.id}
-                                            value={s.id.toString()}
-                                        >
-                                            {s.name}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        </div>
-                        <div className="grid gap-2">
-                            <Label htmlFor="description">Mô tả</Label>
-                            <Textarea
-                                id="description"
-                                value={bookForm.description}
-                                onChange={(e) =>
-                                    setBookForm({ ...bookForm, description: e.target.value })
-                                }
-                                placeholder="Nhập mô tả sách"
-                                rows={4}
-                            />
-                        </div>
-                    </div>
-                    <DialogFooter>
-                        <Button
-                            variant="outline"
-                            onClick={() => {
-                                setIsCreateDialogOpen(false);
-                                resetForm();
-                            }}
-                        >
-                            Hủy
-                        </Button>
-                        <Button
-                            onClick={handleCreate}
-                            disabled={createMutation.isPending}
-                        >
-                            {createMutation.isPending ? "Đang tạo..." : "Tạo sách"}
-                        </Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
 
             {/* Edit Dialog */}
             <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>

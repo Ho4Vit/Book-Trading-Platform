@@ -107,6 +107,8 @@ export default function CustomerOrders() {
     const [orderToCancel, setOrderToCancel] = useState(null);
     const [orderDetailDialogOpen, setOrderDetailDialogOpen] = useState(false);
     const [selectedOrderDetail, setSelectedOrderDetail] = useState(null);
+    const [confirmReceivedDialogOpen, setConfirmReceivedDialogOpen] = useState(false);
+    const [orderToConfirm, setOrderToConfirm] = useState(null);
 
     // Fetch customer orders
     const { data: ordersData, isLoading, refetch } = useCustomQuery(
@@ -139,6 +141,34 @@ export default function CustomerOrders() {
             },
         }
     );
+
+    const updateStatusMutation = useCustomMutation(
+        ({ orderId, status }) => orderApi.updateStatus(orderId, status),
+        null,
+        {
+            onSuccess: () => {
+                refetch();
+                setConfirmReceivedDialogOpen(false);
+                setOrderToConfirm(null);
+                // Optional: You could open the feedback dialog here immediately after success
+                // setFeedbackDialogOpen(true);
+            },
+        }
+    );
+
+    const handleOpenConfirmReceived = (order) => {
+        setOrderToConfirm(order);
+        setConfirmReceivedDialogOpen(true);
+    };
+
+    const handleConfirmReceived = () => {
+        if (orderToConfirm) {
+            updateStatusMutation.mutate({
+                orderId: orderToConfirm.id,
+                status: "DELIVERED"
+            });
+        }
+    };
 
     // Process orders data
     const orders = useMemo(() => {
@@ -584,15 +614,20 @@ export default function CustomerOrders() {
                                                             Hủy đơn
                                                         </Button>
                                                     )}
-                                                    <Button
-                                                        variant="outline"
-                                                        size="sm"
-                                                        className="gap-2"
-                                                        onClick={() => handleOpenFeedbackDialog(order)}
-                                                    >
-                                                        <MessageSquare className="w-4 h-4" />
-                                                        Phản hồi
-                                                    </Button>
+                                                    {order.status === "SHIPPING" && (
+                                                        <Button
+                                                            variant="default" // Changed to default (solid) to make it prominent
+                                                            size="sm"
+                                                            className="gap-2 bg-green-600 hover:bg-green-700 text-white"
+                                                            onClick={(e) => {
+                                                                e.stopPropagation(); // Prevent card click
+                                                                handleOpenConfirmReceived(order);
+                                                            }}
+                                                        >
+                                                            <CheckCircle2 className="w-4 h-4" />
+                                                            Đã nhận hàng
+                                                        </Button>
+                                                    )}
                                                 </div>
                                             </div>
                                         </CardContent>
@@ -794,6 +829,29 @@ export default function CustomerOrders() {
                     )}
                 </DialogContent>
             </Dialog>
+
+            {/* Confirm Received Dialog */}
+            <AlertDialog open={confirmReceivedDialogOpen} onOpenChange={setConfirmReceivedDialogOpen}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Xác nhận đã nhận hàng</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Bạn xác nhận đã nhận được đơn hàng #{orderToConfirm?.id} và kiện hàng còn nguyên vẹn?
+                            <br />
+                            Sau khi xác nhận, trạng thái đơn hàng sẽ chuyển sang "Đã giao".
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Chưa nhận được</AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={handleConfirmReceived}
+                            className="bg-green-600 hover:bg-green-700 text-white"
+                        >
+                            Đã nhận hàng
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
 
             {/* Cancel Order Confirmation Dialog */}
             <AlertDialog open={cancelDialogOpen} onOpenChange={setCancelDialogOpen}>

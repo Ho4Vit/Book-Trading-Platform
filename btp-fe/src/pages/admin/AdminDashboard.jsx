@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import useCustomQuery from "@/hooks/useCustomQuery";
 import { bookApi, customerApi, sellerApi, orderApi } from "@/api/index.js";
@@ -15,6 +15,18 @@ import {
     Package,
     DollarSign,
 } from "lucide-react";
+import {
+    BarChart,
+    Bar,
+    LineChart,
+    Line,
+    XAxis,
+    YAxis,
+    CartesianGrid,
+    Tooltip,
+    Legend,
+    ResponsiveContainer,
+} from "recharts";
 
 export default function AdminDashboard() {
     const navigate = useNavigate();
@@ -89,6 +101,51 @@ export default function AdminDashboard() {
     // Recent orders for quick view
     const recentOrders = orders?.slice(0, 5) || [];
 
+    // Process data for charts
+    const userStatsData = useMemo(() => {
+        return [
+            {
+                name: "Người dùng",
+                "Khách hàng": customers?.length || 0,
+                "Người bán": sellers?.length || 0,
+            }
+        ];
+    }, [customers, sellers]);
+
+    const ordersByMonthData = useMemo(() => {
+        if (!orders || orders.length === 0) return [];
+
+        // Group orders by month
+        const ordersByMonth = {};
+
+        orders.forEach(order => {
+            if (order.orderDate) {
+                const date = new Date(order.orderDate);
+                const monthYear = `${date.getMonth() + 1}/${date.getFullYear()}`;
+
+                if (!ordersByMonth[monthYear]) {
+                    ordersByMonth[monthYear] = {
+                        month: monthYear,
+                        count: 0,
+                        revenue: 0,
+                    };
+                }
+
+                ordersByMonth[monthYear].count += 1;
+                ordersByMonth[monthYear].revenue += order.totalPrice || 0;
+            }
+        });
+
+        // Convert to array and sort by date
+        return Object.values(ordersByMonth)
+            .sort((a, b) => {
+                const [monthA, yearA] = a.month.split('/').map(Number);
+                const [monthB, yearB] = b.month.split('/').map(Number);
+                return yearA !== yearB ? yearA - yearB : monthA - monthB;
+            })
+            .slice(-6); // Get last 6 months
+    }, [orders]);
+
     return (
         <div className="space-y-6">
             {/* Header */}
@@ -128,6 +185,75 @@ export default function AdminDashboard() {
                 })}
             </div>
 
+            {/* Charts Section */}
+            <div className="grid gap-4 md:grid-cols-2">
+                {/* User Statistics Chart */}
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Thống kê người dùng</CardTitle>
+                        <CardDescription>
+                            So sánh số lượng khách hàng và người bán
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        {isLoading ? (
+                            <Skeleton className="h-[300px] w-full" />
+                        ) : (
+                            <ResponsiveContainer width="100%" height={300}>
+                                <BarChart data={userStatsData}>
+                                    <CartesianGrid strokeDasharray="3 3" />
+                                    <XAxis dataKey="name" />
+                                    <YAxis />
+                                    <Tooltip />
+                                    <Legend />
+                                    <Bar dataKey="Khách hàng" fill="#10b981" />
+                                    <Bar dataKey="Người bán" fill="#8b5cf6" />
+                                </BarChart>
+                            </ResponsiveContainer>
+                        )}
+                    </CardContent>
+                </Card>
+
+                {/* Orders Trend Chart */}
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Xu hướng đơn hàng</CardTitle>
+                        <CardDescription>
+                            Số lượng đơn hàng theo tháng (6 tháng gần nhất)
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        {ordersLoading ? (
+                            <Skeleton className="h-[300px] w-full" />
+                        ) : ordersByMonthData.length > 0 ? (
+                            <ResponsiveContainer width="100%" height={300}>
+                                <LineChart data={ordersByMonthData}>
+                                    <CartesianGrid strokeDasharray="3 3" />
+                                    <XAxis dataKey="month" />
+                                    <YAxis />
+                                    <Tooltip />
+                                    <Legend />
+                                    <Line
+                                        type="monotone"
+                                        dataKey="count"
+                                        stroke="#f97316"
+                                        strokeWidth={2}
+                                        name="Số đơn hàng"
+                                    />
+                                </LineChart>
+                            </ResponsiveContainer>
+                        ) : (
+                            <div className="flex items-center justify-center h-[300px] text-muted-foreground">
+                                <div className="text-center">
+                                    <ShoppingCart className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                                    <p>Chưa có dữ liệu đơn hàng</p>
+                                </div>
+                            </div>
+                        )}
+                    </CardContent>
+                </Card>
+            </div>
+
             {/* Recent Activity */}
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
                 {/* Recent Orders */}
@@ -162,7 +288,7 @@ export default function AdminDashboard() {
                             <div className="space-y-3">
                                 {recentOrders.map((order) => (
                                     <div
-                                        key={order.orderId}
+                                        key={order.id}
                                         className="flex items-center justify-between p-3 rounded-lg border hover:bg-muted/50 transition-colors"
                                     >
                                         <div className="flex items-center gap-3">
@@ -171,7 +297,7 @@ export default function AdminDashboard() {
                                             </div>
                                             <div>
                                                 <p className="text-sm font-medium">
-                                                    Đơn hàng #{order.orderId}
+                                                    Đơn hàng {order.transactionId}
                                                 </p>
                                                 <p className="text-xs text-muted-foreground">
                                                     {order.status || "Đang xử lý"}
@@ -180,10 +306,10 @@ export default function AdminDashboard() {
                                         </div>
                                         <div className="text-right">
                                             <p className="text-sm font-medium">
-                                                {order.totalAmount?.toLocaleString("vi-VN")}đ
+                                                {order.totalPrice?.toLocaleString("vi-VN")}đ
                                             </p>
                                             <p className="text-xs text-muted-foreground">
-                                                {new Date(order.createdAt).toLocaleDateString("vi-VN")}
+                                                {new Date(order.orderDate).toLocaleDateString("vi-VN")}
                                             </p>
                                         </div>
                                     </div>
