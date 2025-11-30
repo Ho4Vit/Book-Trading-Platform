@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams, useLocation } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { CheckCircle2, Package, Home, XCircle, Loader2 } from "lucide-react";
@@ -11,19 +11,20 @@ export default function PaymentSuccess() {
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
     const [isConfirming, setIsConfirming] = useState(true);
+    const location = useLocation();
 
     // Get parameters from URL
-    const orderId = searchParams.get("orderId");
+    const orderId = searchParams.get("vnp_TxnRef");
     const paymentId = searchParams.get("paymentId");
-    const resultCode = searchParams.get("resultCode");
-    const message = searchParams.get("message");
+    const resultCode = searchParams.get("vnp_ResponseCode");
+    const message = searchParams.get("vnp_orderInfo");
 
     // Confirm payment mutation
     const confirmPaymentMutation = useCustomMutation(
         (paymentId) => paymentApi.confirmPayment(paymentId),
         null,
         {
-            onSuccess: (response) => {
+            onSuccess: () => {
                 setIsConfirming(false);
                 toast.success("Thanh toán thành công!");
             },
@@ -41,7 +42,7 @@ export default function PaymentSuccess() {
         } else {
             setIsConfirming(false);
         }
-    }, [paymentId, resultCode]);
+    }, [paymentId, resultCode, confirmPaymentMutation]);
 
     useEffect(() => {
         // Auto redirect after 5 seconds when not confirming
@@ -54,7 +55,29 @@ export default function PaymentSuccess() {
         }
     }, [navigate, isConfirming]);
 
-    const isSuccess = resultCode === "0";
+    useEffect(() => {
+        const queryParams = new URLSearchParams(location.search);
+        const params = {};
+
+        // Extract all query parameters
+        queryParams.forEach((value, key) => {
+            params[key] = value;
+        });
+
+        // Call the callbackVNPay API with the extracted parameters
+        const callbackVNPay = async () => {
+            try {
+                const response = await paymentApi.callbackVNPay(params);
+                console.log("VNPay callback response:", response);
+            } catch (error) {
+                console.error("VNPay callback error:", error);
+            }
+        };
+
+        callbackVNPay();
+    }, [location.search]);
+
+    const isSuccess = resultCode === "00";
 
     // Show loading state while confirming payment
     if (isConfirming) {
@@ -162,4 +185,3 @@ export default function PaymentSuccess() {
         </div>
     );
 }
-

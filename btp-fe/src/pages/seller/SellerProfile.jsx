@@ -27,7 +27,7 @@ export default function SellerProfile() {
 	const [profileForm, setProfileForm] = useState({
         fullName: "",
 		email: "",
-        phoneNumber: "",
+        phone: "",
         storeAddress: "",
         storeName: "",
 		storeDescription: "",
@@ -76,7 +76,7 @@ export default function SellerProfile() {
 			setProfileForm({
                 fullName: seller.fullName || "",
 				email: seller.email || "",
-                phoneNumber: seller.phoneNumber || "",
+				phone: seller.phone || "",
                 storeAddress: seller.storeAddress || "",
                 storeName: seller.storeName || "",
                 storeDescription: seller.storeDescription || "",
@@ -93,7 +93,7 @@ export default function SellerProfile() {
 			setProfileForm({
                 fullName: seller.fullName || "",
 				email: seller.email || "",
-                phoneNumber: seller.phoneNumber || "",
+				phone: seller.phone || "",
                 storeAddress: seller.storeAddress || "",
 				storeName: seller.storeName || "",
                 storeDescription: seller.storeDescription || "",
@@ -277,13 +277,13 @@ export default function SellerProfile() {
 						</div>
 
 						<div className="space-y-2">
-							<Label htmlFor="phoneNumber">Số điện thoại</Label>
+							<Label htmlFor="phone">Số điện thoại</Label>
 							{isEditing ? (
 								<Input
-									id="phoneNumber"
-									value={profileForm.phoneNumber}
+									id="phone"
+									value={profileForm.phone}
 									onChange={(e) =>
-										setProfileForm({ ...profileForm, phoneNumber: e.target.value })
+										setProfileForm({ ...profileForm, phone: e.target.value })
 									}
 									placeholder="Nhập số điện thoại"
 								/>

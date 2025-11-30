@@ -48,7 +48,8 @@ export default function ManageOrders() {
 
     // Mutation
     const updateStatusMutation = useCustomMutation(
-        (data) => orderApi.updateStatus(selectedOrder.orderId, data),
+        (data) => orderApi.updateStatus(selectedOrder.id, data),
+        null,
         {
             onSuccess: () => {
                 toast.success("Cập nhật trạng thái đơn hàng thành công!");
@@ -140,22 +141,22 @@ export default function ManageOrders() {
                             ))
                         ) : filteredOrders && filteredOrders.length > 0 ? (
                             filteredOrders.map((order) => (
-                                <TableRow key={order.orderId}>
+                                <TableRow key={order.id}>
                                     <TableCell className="font-medium">
-                                        #{order.orderId}
+                                        {order.transactionId}
                                     </TableCell>
                                     <TableCell>
                                         Khách hàng #{order.customerId || "N/A"}
                                     </TableCell>
                                     <TableCell>
-                                        {order.totalAmount?.toLocaleString("vi-VN")}đ
+                                        {order.totalPrice?.toLocaleString("vi-VN")}đ
                                     </TableCell>
                                     <TableCell>
                                         {getStatusBadge(order.status)}
                                     </TableCell>
                                     <TableCell>
-                                        {order.createdAt
-                                            ? new Date(order.createdAt).toLocaleDateString("vi-VN")
+                                        {order.orderDate
+                                            ? new Date(order.orderDate).toLocaleDateString("vi-VN")
                                             : "N/A"}
                                     </TableCell>
                                     <TableCell className="text-right">
@@ -198,7 +199,7 @@ export default function ManageOrders() {
                     <DialogHeader>
                         <DialogTitle>Chi tiết đơn hàng</DialogTitle>
                         <DialogDescription>
-                            Thông tin chi tiết đơn hàng #{selectedOrder?.orderId}
+                            Thông tin chi tiết đơn hàng #{selectedOrder?.transactionId}
                         </DialogDescription>
                     </DialogHeader>
                     {selectedOrder && (
@@ -227,8 +228,8 @@ export default function ManageOrders() {
                                     <div>
                                         <p className="text-sm text-muted-foreground">Ngày đặt</p>
                                         <p className="font-medium">
-                                            {selectedOrder.createdAt
-                                                ? new Date(selectedOrder.createdAt).toLocaleString("vi-VN")
+                                            {selectedOrder.orderDate
+                                                ? new Date(selectedOrder.orderDate).toLocaleString("vi-VN")
                                                 : "N/A"}
                                         </p>
                                     </div>
@@ -238,7 +239,7 @@ export default function ManageOrders() {
                                     <div>
                                         <p className="text-sm text-muted-foreground">Tổng tiền</p>
                                         <p className="text-lg font-bold text-primary">
-                                            {selectedOrder.totalAmount?.toLocaleString("vi-VN")}đ
+                                            {selectedOrder.totalPrice?.toLocaleString("vi-VN")}đ
                                         </p>
                                     </div>
                                 </div>
@@ -257,7 +258,7 @@ export default function ManageOrders() {
                     <DialogHeader>
                         <DialogTitle>Cập nhật trạng thái</DialogTitle>
                         <DialogDescription>
-                            Thay đổi trạng thái đơn hàng #{selectedOrder?.orderId}
+                            Thay đổi trạng thái đơn hàng #{selectedOrder?.transactionId}
                         </DialogDescription>
                     </DialogHeader>
                     <div className="grid gap-4 py-4">

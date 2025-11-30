@@ -1,9 +1,14 @@
 import { apiClient } from "@/api/apiClient.js";
+import axios from "axios";
 
 export const paymentApi = {
     createPayment: (data) => apiClient.post(`/payments/create`, data, { skipSuccessToast: true }),
-    createMomo: (data) => apiClient.post(`/payments/momo/create`, data, { skipSuccessToast: true }),
-    callbackMomo: (data) => apiClient.post(`/payments/momo/callback`, data, { skipSuccessToast: true }),
+    createVNPay: (orderId) => apiClient.post(`/payments/vnpay/${orderId}`),
+    callbackVNPay: async (params) => {
+        const queryString = new URLSearchParams(params).toString();
+        const url = `/payments/vnpay-return?${queryString}`;
+        return axios.get(url);
+    },
     confirmPayment: (paymentId) => apiClient.post(`/payments/confirm/${paymentId}`),
     getAllPayment: () => apiClient.get(`/payments/all`),
     getPayment: (paymentId) => apiClient.get(`/payments/get/${paymentId}`),

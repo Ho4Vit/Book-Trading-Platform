@@ -328,7 +328,7 @@ const CustomerProfile = () => {
                           mode="single"
                           selected={selectedDate}
                           onSelect={setSelectedDate}
-                          captionLayout="dropdown-months"
+                          captionLayout="dropdown"
                           fromYear={1950}
                           toYear={new Date().getFullYear()}
                           defaultMonth={selectedDate || new Date(2000, 0)}

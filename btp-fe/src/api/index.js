@@ -14,3 +14,4 @@ export * from "./sellerApi";
 export * from "./seriesApi";
 export * from "./feedbackApi";
 export * from "./discountApi";
+export * from "./recomendApi";

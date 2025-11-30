@@ -11,4 +11,7 @@ export const sellerApi = {
             'Content-Type': 'multipart/form-data'
         }
     }),
+    staticsSellerById: (sellerId) => apiClient.get(`/v1/sellers/seller/${sellerId}`),
+    staticsSellerMonthly: (sellerId, month, year) => apiClient.get(`/v1/sellers/monthly?sellerId=${sellerId}&month=${month}&year=${year}`),
+    staticsSellerAll: () => apiClient.get(`/v1/sellers/all`),
 };

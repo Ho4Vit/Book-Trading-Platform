@@ -90,10 +90,16 @@ export default function CartPopover() {
         setItemToRemove(null);
     };
 
-    // Access cart data - handle both possible response structures
+    // Access cart data safely (handle when new user has no cart)
     const cartResponse = cartData?.data || cartData;
-    const cartItems = cartResponse?.cartItems || [];
-    const cartCount = cartItems.reduce((acc, item) => acc + item.quantity, 0);
+
+    const cartItems = Array.isArray(cartResponse?.cartItems)
+        ? cartResponse.cartItems
+        : [];
+
+    const cartCount = cartItems.length > 0
+        ? cartItems.reduce((acc, item) => acc + item.quantity, 0)
+        : 0;
 
     // Parse discounts data
     const discounts = Array.isArray(discountsData?.data)
@@ -134,6 +140,27 @@ export default function CartPopover() {
     // Don't render cart for non-customers
     if (!isCustomer) {
         return null;
+    }
+
+    // Fallback for new customers who don't have a cart yet
+    if (!cartData && !isLoading) {
+        return (
+            <Popover>
+                <PopoverTrigger asChild>
+                    <Button variant="ghost" size="icon" className="relative">
+                        <ShoppingCart className="h-5 w-5" />
+                    </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-96 p-0 shadow-xl border rounded-lg overflow-hidden" align="end">
+                    <div className="flex flex-col items-center justify-center py-12 text-center">
+                        <ShoppingCart className="h-16 w-16 text-muted-foreground/30 mb-3" />
+                        <p className="text-sm text-muted-foreground font-medium mb-1">
+                            Chào mừng bạn! Hãy thêm sản phẩm đầu tiên vào giỏ hàng nhé 🎉
+                        </p>
+                    </div>
+                </PopoverContent>
+            </Popover>
+        );
     }
 
     return (

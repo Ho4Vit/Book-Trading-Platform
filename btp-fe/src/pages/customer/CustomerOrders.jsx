@@ -130,6 +130,7 @@ export default function CustomerOrders() {
     // Cancel order mutation
     const cancelOrderMutation = useCustomMutation(
         (orderId) => orderApi.cancelOrder(orderId),
+        null,
         {
             onSuccess: () => {
                 refetch();

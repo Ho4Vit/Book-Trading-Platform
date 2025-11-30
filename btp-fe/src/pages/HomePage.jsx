@@ -1,5 +1,6 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
+import RecommendationWidget from "@/components/RecommendationWidget.jsx";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import {
@@ -546,6 +547,9 @@ export default function HomePage() {
 
 			{/* Footer */}
 			<Footer />
+
+			{/* Recommendation Widget */}
+			<RecommendationWidget />
 		</div>
 	);
 }

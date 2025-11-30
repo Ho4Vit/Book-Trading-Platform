@@ -49,6 +49,7 @@ export default function PaymentCheckout() {
     const { userId: rawUserId } = useAuthStore();
     const userId = Number(rawUserId);
     const queryClient = useQueryClient();
+    const [isPayUrl, setIsPayUrl] = useState(false);
 
     // Payment method state
     const [paymentMethod, setPaymentMethod] = useState("COD");
@@ -184,12 +185,21 @@ export default function PaymentCheckout() {
                 }
 
                 // Create payment based on payment method
-                if (paymentMethod === "MOMO") {
-                    // Create MoMo payment
-                    createMomoPayment(order);
+                if (paymentMethod === "VNPAY" && order.id) {
+                    console.log("Creating VNPAY payment for order:", order.id);
+                    const vnpayResponse = await paymentApi.createVNPay(order.id);
+                    const payUrl = vnpayResponse?.data || vnpayResponse;
+                    setIsPayUrl(true);
+                    if (payUrl) {
+                        window.location.href = payUrl;
+                    }
+                    else {
+                        throw new Error("Không nhận được URL thanh toán VNPAY");
+                    }
                 } else {
                     // Create COD payment
                     createCODPayment(order);
+                    setIsPayUrl(false);
                 }
             },
             onError: (error) => {
@@ -213,32 +223,31 @@ export default function PaymentCheckout() {
         }
     );
 
-    // Create MoMo payment mutation
-    const createMomoMutation = useCustomMutation(
-        (paymentData) => paymentApi.createMomo(paymentData),
-        null,
-        {
-            onSuccess: (response) => {
-                console.log("MoMo Response:", response);
-
-                const payUrl = response?.payUrl;
-                const resultCode = String(response?.resultCode || "");
-
-                // Check if payUrl exists and resultCode is success
-                if (payUrl && (resultCode === "0" || resultCode === "00")) {
-                    // Redirect to MoMo payment page (shows QR code)
-                    window.location.href = payUrl;
-                } else {
-                    console.error("MoMo payment failed:", response);
-                    toast.error(response?.message || "Không thể tạo thanh toán MoMo");
-                }
-            },
-            onError: (error) => {
-                console.error("MoMo API Error:", error);
-                toast.error(error?.message || "Không thể tạo thanh toán MoMo");
-            },
-        }
-    );
+    // // Create MoMo payment mutation
+    // const createMomoMutation = useCustomMutation(
+    //     (orderId) => paymentApi.createVNPay(orderId),
+    //     null,
+    //     {
+    //         onSuccess: (response) => {
+    //             console.log("MoMo Response:", response);
+    //
+    //             const payUrl = response?.payUrl;
+    //
+    //             // Check if payUrl exists and resultCode is success
+    //             if (payUrl) {
+    //                 // Redirect to MoMo payment page (shows QR code)
+    //                 window.location.href = payUrl;
+    //             } else {
+    //                 console.error("MoMo payment failed:", response);
+    //                 toast.error(response?.message || "Không thể tạo thanh toán MoMo");
+    //             }
+    //         },
+    //         onError: (error) => {
+    //             console.error("MoMo API Error:", error);
+    //             toast.error(error?.message || "Không thể tạo thanh toán MoMo");
+    //         },
+    //     }
+    // );
 
     const createCODPayment = (order) => {
         createCODPaymentMutation.mutate({
@@ -249,16 +258,11 @@ export default function PaymentCheckout() {
         });
     };
 
-    const createMomoPayment = (order) => {
-        createMomoMutation.mutate({
-            transactionId: order.transactionId,
-            orderId: order.id,
-            orderInfo: `Thanh toán đơn hàng ${order.id}`,
-            discount: discountAmount,
-            returnUrl: "http://localhost:5173/payment/success",
-            notifyUrl: "http://localhost:8080/api/payments/momo/callback",
-        });
-    };
+    // const createMomoPayment = (order) => {
+    //     createMomoMutation.mutate({
+    //         orderId: order.id,
+    //     });
+    // };
 
     const cartCount = cartItems.reduce((acc, item) => acc + item.quantity, 0);
 
@@ -380,7 +384,7 @@ export default function PaymentCheckout() {
     };
 
     const isLoading = cartLoading || customerLoading;
-    const isProcessing = createOrderMutation.isPending || createMomoMutation.isPending || createCODPaymentMutation.isPending;
+    const isProcessing = createOrderMutation.isPending || createCODPaymentMutation.isPending || isPayUrl;
 
     if (isLoading) {
         return (
@@ -397,12 +401,6 @@ export default function PaymentCheckout() {
                 </div>
             </div>
         );
-    }
-
-    // Redirect if cart is empty
-    if (cartItems.length === 0) {
-        navigate("/customer/cart");
-        return null;
     }
 
     return (
@@ -580,18 +578,18 @@ export default function PaymentCheckout() {
                                         </Label>
                                     </div>
                                     <div className="flex items-center space-x-3 border-2 rounded-lg p-4 hover:border-primary transition-colors cursor-pointer">
-                                        <RadioGroupItem value="MOMO" id="momo" />
+                                        <RadioGroupItem value="VNPAY" id="vnpay" />
                                         <Label
-                                            htmlFor="momo"
+                                            htmlFor="vnpay"
                                             className="flex items-center gap-3 cursor-pointer flex-1"
                                         >
                                             <div className="w-10 h-10 rounded-full bg-pink-100 flex items-center justify-center">
                                                 <CreditCard className="w-5 h-5 text-pink-600" />
                                             </div>
                                             <div>
-                                                <p className="font-semibold">Ví MoMo</p>
+                                                <p className="font-semibold">VNPAY</p>
                                                 <p className="text-sm text-muted-foreground">
-                                                    Thanh toán qua ví điện tử MoMo
+                                                    Thanh toán qua VNPAY
                                                 </p>
                                             </div>
                                         </Label>

@@ -62,6 +62,7 @@ export default function SellerLayout() {
         { path: "/seller/inventory", icon: Package, label: "Tồn kho" },
         { path: "/seller/vouchers", icon: Ticket, label: "Voucher" },
         { path: "/seller/feedbacks", icon: MessageSquare, label: "Đánh giá" },
+        { path: "/seller/statistics", icon: BarChart3, label: "Thống kê" },
         { path: "/seller/profile", icon: User, label: "Hồ sơ" },
     ];
 

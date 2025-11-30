@@ -8,10 +8,13 @@ import { useAuthStore } from "../store/authStore";
 const handleError = (error) => {
     const status = error?.response?.status;
     const message =
-        error?.response?.data?.message ||
+        error?.response?.data?.error ||
         error?.message ||
         "Đã xảy ra lỗi không xác định";
 
+    if(message === "Giỏ hàng trống") {
+        throw error;
+    }
     if (status === 401) {
         const { logout } = useAuthStore.getState();
         logout();
@@ -58,12 +61,7 @@ export const apiClient = {
                 ...config,
                 headers: { ...headers, ...config.headers },
             });
-
-            // Only show toast if not explicitly disabled
-            if (config.skipSuccessToast !== true) {
-                toast.success("Thao tác thành công!");
-            }
-            return response;
+            return response.data;
         } catch (error) {
             handleError(error);
         }
