@@ -430,7 +430,7 @@ export default function SellerOrders() {
                                         <p>
                                             <span className="text-muted-foreground">Trạng thái:</span>{" "}
                                             <Badge variant={paymentMap[selectedOrder.id].status === "SUCCESS" ? "success" : "secondary"}>
-                                                {paymentMap[selectedOrder.id].status === "SUCCESS" ? "Thành công" : paymentMap[selectedOrder.id].status}
+                                                {paymentMap[selectedOrder.id].status === "SUCCESS" ? "Thành công" : paymentMap[selectedOrder.id].status === "PENDING" ? "Đang chờ" : "Thất bại"}
                                             </Badge>
                                         </p>
                                         <p>
