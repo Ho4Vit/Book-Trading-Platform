@@ -749,14 +749,14 @@ export default function CustomerOrders() {
                                             <div key={item.bookId} className="flex gap-4 pb-4 border-b last:border-0">
                                                 <img
                                                     src={item.imgUrl || "https://via.placeholder.com/80x100"}
-                                                    alt={item.bookName}
+                                                    alt={item.bookTitle}
                                                     className="w-20 h-24 object-cover rounded border"
                                                 />
                                                 <div className="flex-1 space-y-2">
-                                                    <h4 className="font-semibold line-clamp-2">{item.bookName}</h4>
+                                                    <h4 className="font-semibold line-clamp-2">{item.bookTitle}</h4>
                                                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
                                                         <ShoppingBag className="w-3 h-3" />
-                                                        <span>{item.storeName}</span>
+                                                        <span>{item.sellerName}</span>
                                                     </div>
                                                     <div className="flex items-center justify-between">
                                                         <span className="text-sm text-muted-foreground">
@@ -764,7 +764,7 @@ export default function CustomerOrders() {
                                                         </span>
                                                         <div className="text-right">
                                                             <p className="text-sm text-muted-foreground">
-                                                                {item.price.toLocaleString("vi-VN")}₫ x {item.quantity}
+                                                                {item.bookPrice.toLocaleString("vi-VN")}₫ x {item.quantity}
                                                             </p>
                                                             <p className="font-semibold text-primary">
                                                                 {(item.price * item.quantity).toLocaleString("vi-VN")}₫

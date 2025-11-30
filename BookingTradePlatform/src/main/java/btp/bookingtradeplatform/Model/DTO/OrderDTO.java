@@ -2,6 +2,7 @@ package btp.bookingtradeplatform.Model.DTO;
 
 import btp.bookingtradeplatform.Model.Entity.Order;
 import btp.bookingtradeplatform.Model.Entity.CartItem;
+import btp.bookingtradeplatform.Model.Entity.OrderItem;
 import btp.bookingtradeplatform.Model.Enum.OrderStatus;
 import lombok.*;
 
@@ -18,7 +19,7 @@ import java.util.stream.Collectors;
 public class OrderDTO {
     private Long id;
     private Long customerId;
-    private List<CartItemDTO> cartItems;
+    private List<OrderItemDTO> cartItems;
     private BigDecimal totalPrice;
     private OrderStatus status;
     private LocalDateTime orderDate;
@@ -30,7 +31,7 @@ public class OrderDTO {
                 .id(order.getId())
                 .customerId(order.getCustomer().getId())
                 .cartItems(order.getOrderItems().stream()
-                        .map(CartItemDTO::fromEntity)
+                        .map(OrderItemDTO::fromEntity)
                         .collect(Collectors.toList()))
                 .totalPrice(order.getTotalPrice())
                 .status(order.getStatus())

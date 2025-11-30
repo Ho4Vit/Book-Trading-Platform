@@ -1,7 +1,10 @@
 package btp.bookingtradeplatform.Service;
 
+import btp.bookingtradeplatform.Exception.AppException;
+import btp.bookingtradeplatform.Exception.BusinessException;
 import btp.bookingtradeplatform.Model.DTO.SellerSalesReportDTO;
 import btp.bookingtradeplatform.Model.Entity.*;
+import btp.bookingtradeplatform.Repository.BookRepository;
 import btp.bookingtradeplatform.Repository.OrderRepository;
 import btp.bookingtradeplatform.Repository.SellerSalesReportRepository;
 import lombok.RequiredArgsConstructor;
@@ -17,6 +20,7 @@ public class SellerSalesReportService {
 
     private final OrderRepository orderRepository;
     private final SellerSalesReportRepository reportRepository;
+    private final BookRepository bookRepository;
 
     public SellerSalesReportDTO generateMonthlyReport(Long sellerId, int month, int year) {
         List<Order> orders = orderRepository.findAll().stream()
@@ -24,7 +28,7 @@ public class SellerSalesReportService {
                         && o.getOrderDate().getMonthValue() == month
                         && o.getOrderDate().getYear() == year
                         && o.getOrderItems().stream().anyMatch(
-                        item -> item.getBook().getSeller().getId().equals(sellerId)
+                        item -> item.getSellerId().equals(sellerId)
                 ))
                 .toList();
 
@@ -45,11 +49,13 @@ public class SellerSalesReportService {
 
         for (Order order : orders) {
             totalRevenue = totalRevenue.add(order.getTotalPrice());
-            for (CartItem item : order.getOrderItems()) {
-                if (!item.getBook().getSeller().getId().equals(sellerId)) continue;
+            for (OrderItem item : order.getOrderItems()) {
+                if (!item.getSellerId().equals(sellerId)) continue;
 
                 totalSold += item.getQuantity();
-                bookMap.merge(item.getBook(), item.getQuantity(), Integer::sum);
+                Book book = bookRepository.findById(item.getBookId())
+                        .orElseThrow(() -> new BusinessException(AppException.BOOK_NOT_FOUND));
+                bookMap.merge(book, item.getQuantity(), Integer::sum);
             }
         }
 

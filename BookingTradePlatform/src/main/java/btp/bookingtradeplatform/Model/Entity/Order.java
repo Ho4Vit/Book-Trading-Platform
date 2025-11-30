@@ -35,9 +35,9 @@ public class Order {
     @JoinColumn(name = "customer_id")
     private Customer customer;
 
-    @OneToMany
+    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
     @JoinColumn(name = "order_id")
-    private List<CartItem> orderItems;
+    private List<OrderItem> orderItems;
 
 
     private boolean Paid = false;

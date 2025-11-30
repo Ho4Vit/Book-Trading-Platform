@@ -64,36 +64,43 @@ public class OrderService {
         Customer customer = customerRepository.findById(request.getCustomerId())
                 .orElseThrow(() -> new BusinessException(AppException.USER_NOT_FOUND));
 
-        List<CartItem> cartItems = request.getItems().stream().map(itemRequest -> {
-            Book book = bookRepository.findById(itemRequest.getBookId())
-                    .orElseThrow(() -> new BusinessException(AppException.BOOK_NOT_FOUND));
-
-            CartItem item = new CartItem();
-            item.setBook(book);
-            item.setQuantity(itemRequest.getQuantity());
-            cartItemRepository.save(item);
-            return item;
-        }).toList();
-
-        BigDecimal total = cartItems.stream()
-                .map(item -> item.getBook().getPrice().multiply(BigDecimal.valueOf(item.getQuantity())))
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
-
         Order order = new Order();
         order.setCustomer(customer);
-        order.setOrderItems(cartItems);
-        order.setTotalPrice(total);
         order.setOrderDate(LocalDateTime.now());
         order.setStatus(OrderStatus.PENDING);
 
+        List<OrderItem> orderItems = request.getItems().stream().map(itemRequest -> {
+            Book book = bookRepository.findById(itemRequest.getBookId())
+                    .orElseThrow(() -> new BusinessException(AppException.BOOK_NOT_FOUND));
+
+            OrderItem orderItem = new OrderItem();
+            orderItem.setBookId(book.getId());
+            orderItem.setBookPrice(book.getPrice());
+            orderItem.setSellerName(book.getSeller().getStoreName());
+            orderItem.setQuantity(itemRequest.getQuantity());
+            orderItem.setSellerId(book.getSeller().getId());
+            orderItem.setBookTitle(book.getTitle());
+            orderItem.setOrder(order);
+            return orderItem;
+        }).toList();
+
+        order.setOrderItems(orderItems);
+
+        BigDecimal total = orderItems.stream()
+                .map(oi -> oi.getBookPrice().multiply(BigDecimal.valueOf(oi.getQuantity())))
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        order.setTotalPrice(total);
 
         Order saved = orderRepository.save(order);
+
         return ResponseEntity.ok(new ResponseData<>(
                 AppException.SUCCESS.getCode(),
                 "Order created successfully",
                 OrderDTO.fromEntity(saved)
         ));
     }
+
 
     public ResponseEntity<ResponseData<OrderDTO>> updateOrderStatus(Long id, UpdateOrderStatus request) {
         Order order = orderRepository.findById(id)
@@ -111,27 +118,38 @@ public class OrderService {
     }
 
     public void reverseStockForOrder(Order order) {
-        for (CartItem item : order.getOrderItems()) {
-            Book book = item.getBook();
+        for (OrderItem item : order.getOrderItems()) {
+            // Lấy lại Book dựa trên snapshot bookId
+            Book book = bookRepository.findById(item.getBookId())
+                    .orElseThrow(() -> new BusinessException(AppException.BOOK_NOT_FOUND));
             int quantity = item.getQuantity();
+            // Tăng lại kho
             book.setStock(book.getStock() + quantity);
+            // Giảm số lượng đã bán
             book.setSoldCount(book.getSoldCount() - quantity);
             bookRepository.save(book);
         }
     }
 
+
     public void decreaseStockForOrder(Order order) {
-        for (CartItem item : order.getOrderItems()) {
-            Book book = item.getBook();
+        for (OrderItem item : order.getOrderItems()) {
+            // Lấy Book theo bookId snapshot
+            Book book = bookRepository.findById(item.getBookId())
+                    .orElseThrow(() -> new BusinessException(AppException.BOOK_NOT_FOUND));
             int quantity = item.getQuantity();
+            // Kiểm tra đủ hàng
             if (book.getStock() < quantity) {
                 throw new BusinessException(AppException.OUT_OF_STOCK);
             }
+            // Trừ kho
             book.setStock(book.getStock() - quantity);
+            // Tăng số lượng đã bán
             book.setSoldCount(book.getSoldCount() + quantity);
             bookRepository.save(book);
         }
     }
+
 
     public ResponseEntity<ResponseData<Void>> CancelOrder(Long id) {
         Order order = orderRepository.findById(id)

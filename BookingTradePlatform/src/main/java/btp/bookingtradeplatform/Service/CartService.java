@@ -139,13 +139,16 @@ public class CartService {
         Cart cart = cartRepository.findByUserId(customer.getId())
                 .orElse(null);
 
+        CartDTO cartDTO = (cart != null) ? new CartDTO().fromEntity(cart) : null;
+
         return ResponseEntity
                 .status(AppException.SUCCESS.getHttpStatus())
                 .body(new ResponseData<>(
                         AppException.SUCCESS.getCode(),
                         AppException.SUCCESS.getMessage(),
-                        new CartDTO().fromEntity(cart)
+                        cartDTO
                 ));
     }
+
 
 }

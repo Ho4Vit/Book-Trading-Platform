@@ -471,18 +471,18 @@ export default function SellerOrders() {
                                             <div className="flex items-center gap-3">
                                                 <img
                                                     src={item.imgUrl || "https://via.placeholder.com/60"}
-                                                    alt={item.bookName}
+                                                    alt={item.bookTitle}
                                                     className="w-12 h-12 rounded object-cover"
                                                 />
                                                 <div>
-                                                    <p className="font-medium">{item.bookName || `Book #${item.bookId}`}</p>
+                                                    <p className="font-medium">{item.bookTitle || `Book #${item.bookId}`}</p>
                                                     <p className="text-sm text-muted-foreground">
-                                                        SL: {item.quantity} × {item.price.toLocaleString()}đ
+                                                        SL: {item.quantity} × {item.bookPrice.toLocaleString()}đ
                                                     </p>
                                                 </div>
                                             </div>
                                             <p className="font-semibold">
-                                                {(item.price * item.quantity).toLocaleString()}đ
+                                                {(item.bookPrice * item.quantity).toLocaleString()}đ
                                             </p>
                                         </div>
                                     ))}
