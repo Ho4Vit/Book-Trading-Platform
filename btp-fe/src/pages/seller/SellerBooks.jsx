@@ -614,8 +614,10 @@ export default function SellerBooks() {
                         <div className="grid gap-2">
                             <Label htmlFor="edit-title">Tên sách *</Label>
                             <Input
+                                className="disabled:opacity-100 bg-muted"
                                 id="edit-title"
                                 value={bookForm.title}
+                                disabled={true}
                                 onChange={(e) =>
                                     setBookForm({ ...bookForm, title: e.target.value })
                                 }
