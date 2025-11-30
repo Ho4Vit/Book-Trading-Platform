@@ -164,6 +164,7 @@ public class PaymentService {
         if ("00".equals(responseCode)) {
             payment.setStatus(PaymentStatus.SUCCESS);
             order.setPaid(true);
+            orderService.decreaseStockForOrder(order);
         } else {
             payment.setStatus(PaymentStatus.FAILED);
         }

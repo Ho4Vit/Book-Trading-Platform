@@ -10,7 +10,6 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/recommend")
 @RequiredArgsConstructor
-@CrossOrigin("*")
 public class BookRecommendationController {
 
     private final BookRecommendationService recommendationService;

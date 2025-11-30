@@ -88,9 +88,6 @@ public class OrderService {
 
 
         Order saved = orderRepository.save(order);
-
-        decreaseStockForOrder(saved);
-
         return ResponseEntity.ok(new ResponseData<>(
                 AppException.SUCCESS.getCode(),
                 "Order created successfully",
@@ -101,6 +98,7 @@ public class OrderService {
     public ResponseEntity<ResponseData<OrderDTO>> updateOrderStatus(Long id, UpdateOrderStatus request) {
         Order order = orderRepository.findById(id)
                 .orElseThrow(() -> new BusinessException(AppException.NOT_FOUND));
+
 
         order.setStatus(request.getStatus());
         Order updated = orderRepository.save(order);
@@ -141,7 +139,6 @@ public class OrderService {
         if (order.getStatus() == OrderStatus.CONFIRMED) {
             throw new BusinessException(AppException.CANNOT_CANCEL_ORDER);
         }
-        reverseStockForOrder(order);
         order.setStatus( OrderStatus.CANCELLED);
         orderRepository.save(order);
         return ResponseEntity.ok(new ResponseData<>(
