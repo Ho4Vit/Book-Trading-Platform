@@ -38,7 +38,7 @@ export const apiClient = {
     async get(url, config = {}) {
         try {
             const response = await axiosInstance.get(url, config);
-            return response.data;
+            return response.data.data;
         } catch (error) {
             handleError(error);
         }
