@@ -78,6 +78,7 @@ public class MailSenderService {
             User user = userRepository.findByEmail(email)
                     .orElseThrow(() -> new BusinessException(AppException.NOT_FOUND));
             user.setIsOauth2(true);
+            user.setIsEmailVerified(true);
         }
 
         return ResponseEntity

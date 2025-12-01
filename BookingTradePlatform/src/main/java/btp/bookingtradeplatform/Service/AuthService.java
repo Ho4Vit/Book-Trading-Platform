@@ -110,6 +110,7 @@ public class AuthService {
         }
 
         loginFailureService.resetFailures(ip);
+
         Optional<User> userOptional =
                 customerRepository.findByUsername(authRequest.getUsername()).map(c -> (User) c)
                         .or(() -> customerRepository.findByEmail(authRequest.getUsername()).map(c -> (User) c))
@@ -117,6 +118,18 @@ public class AuthService {
                         .or(() -> sellerRepository.findByEmail(authRequest.getUsername()).map(s -> (User) s));
 
         User user = userOptional.orElseThrow(() -> new BusinessException(AppException.INVALID_CREDENTIALS));
+
+        // ✅ THÊM CHECK EMAIL CHƯA VERIFY
+        if (user.getIsEmailVerified() == null || !user.getIsEmailVerified()) {
+            return ResponseEntity
+                    .status(AppException.EMAIL_NOT_VERIFIED.getHttpStatus())
+                    .body(new ResponseData<>(
+                            AppException.EMAIL_NOT_VERIFIED.getCode(),
+                            "Email của bạn chưa được xác minh. Vui lòng kiểm tra email để kích hoạt tài khoản.",
+                            null
+                    ));
+        }
+
 
         UserDetails userDetails = userDetailsService.loadUserByUsername(user.getUsername());
         String token = jwtProvider.generateToken(userDetails);

@@ -6,6 +6,7 @@ import btp.bookingtradeplatform.Model.Request.RegiterCustomerRequest;
 import btp.bookingtradeplatform.Model.Response.ResponseData;
 import btp.bookingtradeplatform.Model.UpdateRequest.UpdateCustomerForm;
 import btp.bookingtradeplatform.Service.CustomerService;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -35,7 +36,7 @@ public class CustomerController {
     }
 
     @PostMapping("/register")
-    public ResponseEntity<ResponseData<CustomerDTO>> registerCustomer(@RequestBody RegiterCustomerRequest request) {
+    public ResponseEntity<ResponseData<CustomerDTO>> registerCustomer(@Valid @RequestBody RegiterCustomerRequest request) {
         return customerService.createCustomer(request);
     }
 

@@ -91,6 +91,8 @@ public class CustomerService {
         customer.setRole(Role.CUSTOMER);
         customer.setIsActive(true);
         customer.setCreatedAt(LocalDateTime.now());
+        customer.setLastLoginAt(LocalDateTime.now());
+        customer.setIsEmailVerified(false);
 
         Customer savedCustomer = customerRepository.save(customer);
         CustomerDTO dto = CustomerDTO.fromEntity(savedCustomer);

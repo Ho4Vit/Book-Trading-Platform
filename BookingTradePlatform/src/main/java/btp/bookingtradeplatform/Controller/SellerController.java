@@ -3,7 +3,6 @@ package btp.bookingtradeplatform.Controller;
 import btp.bookingtradeplatform.Exception.AppException;
 import btp.bookingtradeplatform.Model.DTO.SellerDTO;
 import btp.bookingtradeplatform.Model.DTO.SellerSalesReportDTO;
-import btp.bookingtradeplatform.Model.Entity.SellerSalesReport;
 import btp.bookingtradeplatform.Model.Request.EmailRequest;
 import btp.bookingtradeplatform.Model.Request.RegisterSellerRequest;
 import btp.bookingtradeplatform.Model.Response.ResponseData;
@@ -13,16 +12,17 @@ import btp.bookingtradeplatform.Service.SellerSalesReportService;
 import btp.bookingtradeplatform.Service.SellerService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import jakarta.validation.Valid;
 import java.io.IOException;
 import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/sellers")
 public class SellerController {
+
     @Autowired
     private SellerService sellerService;
 
@@ -43,21 +43,27 @@ public class SellerController {
     }
 
     @GetMapping("/getbyemail")
-    public ResponseEntity<ResponseData<SellerDTO>> getSellerByEmail(@RequestBody EmailRequest email) {
+    public ResponseEntity<ResponseData<SellerDTO>> getSellerByEmail(@Valid @RequestBody EmailRequest email) {
         return sellerService.getSellerByEmail(email);
     }
 
+    // ✅ Thêm @Valid để validation hoạt động
     @PostMapping("/register")
-    public ResponseEntity<ResponseData<SellerDTO>> registerSeller(@RequestBody RegisterSellerRequest request) {
+    public ResponseEntity<ResponseData<SellerDTO>> registerSeller(
+            @Valid @RequestBody RegisterSellerRequest request
+    ) {
         return sellerService.createSeller(request);
     }
 
     @PostMapping("/update/{id}")
-    public ResponseEntity<ResponseData<SellerDTO>> updateSeller(@PathVariable Long id, @RequestBody UpdateSellerForm updateForm) {
+    public ResponseEntity<ResponseData<SellerDTO>> updateSeller(
+            @PathVariable Long id,
+            @Valid @RequestBody UpdateSellerForm updateForm
+    ) {
         return sellerService.updateSeller(id, updateForm);
     }
 
-    @PostMapping("/avartat/{id}")
+    @PostMapping("/avatar/{id}")
     public ResponseEntity<ResponseData<Void>> uploadAvatar(
             @PathVariable Long id,
             @RequestParam("file") MultipartFile file

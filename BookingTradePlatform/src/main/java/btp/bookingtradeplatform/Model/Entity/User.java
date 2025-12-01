@@ -31,6 +31,7 @@ public abstract class User {
 
     private Boolean isActive;
     private Boolean isOauth2;
+    private Boolean isEmailVerified;
 
     private LocalDateTime createdAt;
     private LocalDateTime lastLoginAt;

@@ -11,6 +11,7 @@ public enum AppException {
     FORBIDDEN("ERR_003", "Không có quyền truy cập", HttpStatus.FORBIDDEN),
     NOT_FOUND("ERR_004", "Không tìm thấy", HttpStatus.NOT_FOUND),
     VALIDATION_FAILED("ERR_005", "Dữ liệu không hợp lệ", HttpStatus.BAD_REQUEST),
+    EMAIL_NOT_VERIFIED("ERP_006", "Email chưa được xác minh", HttpStatus.FORBIDDEN),
 
     // ========== User / Auth ==========
     EMAIL_ALREADY_EXISTS("USR_001", "Email đã được sử dụng", HttpStatus.BAD_REQUEST),
