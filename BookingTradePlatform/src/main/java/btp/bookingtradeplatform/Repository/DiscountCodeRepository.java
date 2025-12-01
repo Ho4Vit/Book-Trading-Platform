@@ -25,4 +25,6 @@ public interface DiscountCodeRepository extends JpaRepository<DiscountCode, Long
             @Param("orderValue") BigDecimal orderValue,
             @Param("now") LocalDateTime now
     );
+
+    DiscountCode findByCode(String code);
 }

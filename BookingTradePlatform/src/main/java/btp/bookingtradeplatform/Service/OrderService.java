@@ -9,10 +9,7 @@ import btp.bookingtradeplatform.Model.Enum.OrderStatus;
 import btp.bookingtradeplatform.Model.Request.CreateOrderRequest;
 import btp.bookingtradeplatform.Model.Response.ResponseData;
 import btp.bookingtradeplatform.Model.UpdateRequest.UpdateOrderStatus;
-import btp.bookingtradeplatform.Repository.BookRepository;
-import btp.bookingtradeplatform.Repository.CartItemRepository;
-import btp.bookingtradeplatform.Repository.CustomerRepository;
-import btp.bookingtradeplatform.Repository.OrderRepository;
+import btp.bookingtradeplatform.Repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -20,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 @Transactional
@@ -37,6 +35,9 @@ public class OrderService {
 
     @Autowired
     private BookRepository bookRepository;
+
+    @Autowired
+    private DiscountCodeRepository discountCodeRepository;
 
     public ResponseEntity<ResponseData<List<OrderDTO>>> getAllOrders() {
         List<Order> orders = orderRepository.findAll();
@@ -61,45 +62,84 @@ public class OrderService {
     }
 
     public ResponseEntity<ResponseData<OrderDTO>> createOrder(CreateOrderRequest request) {
+
         Customer customer = customerRepository.findById(request.getCustomerId())
                 .orElseThrow(() -> new BusinessException(AppException.USER_NOT_FOUND));
 
-        Order order = new Order();
-        order.setCustomer(customer);
-        order.setOrderDate(LocalDateTime.now());
-        order.setStatus(OrderStatus.PENDING);
+        Order order = Order.builder()
+                .customer(customer)
+                .orderDate(LocalDateTime.now())
+                .status(OrderStatus.PENDING)
+                .build();
 
-        List<OrderItem> orderItems = request.getItems().stream().map(itemRequest -> {
-            Book book = bookRepository.findById(itemRequest.getBookId())
+        List<OrderItem> orderItems = new ArrayList<>();
+        BigDecimal totalOrder = BigDecimal.ZERO;
+
+        for (CreateOrderRequest.OrderItemRequest itemReq : request.getItems()) {
+
+            Book book = bookRepository.findById(itemReq.getBookId())
                     .orElseThrow(() -> new BusinessException(AppException.BOOK_NOT_FOUND));
 
-            OrderItem orderItem = new OrderItem();
-            orderItem.setBookId(book.getId());
-            orderItem.setBookPrice(book.getPrice());
-            orderItem.setSellerName(book.getSeller().getStoreName());
-            orderItem.setQuantity(itemRequest.getQuantity());
-            orderItem.setSellerId(book.getSeller().getId());
-            orderItem.setBookTitle(book.getTitle());
-            orderItem.setOrder(order);
-            return orderItem;
-        }).toList();
+            BigDecimal bookPrice = book.getPrice();
+            int quantity = itemReq.getQuantity();
+            BigDecimal subtotal = bookPrice.multiply(BigDecimal.valueOf(quantity));
+
+            BigDecimal discountAmount = BigDecimal.ZERO;
+            BigDecimal totalAfterDiscount = subtotal;
+
+            DiscountCode discountCode = null;
+            if (itemReq.getDiscountCode() != null && !itemReq.getDiscountCode().isBlank()) {
+                discountCode = discountCodeRepository.findByCode(itemReq.getDiscountCode());
+
+                if (discountCode != null) {
+                    if (discountCode.isPercentage()) {
+                        // Giảm theo %
+                        discountAmount = subtotal.multiply(discountCode.getDiscountAmount())
+                                .divide(BigDecimal.valueOf(100));
+                    } else {
+                        // Giảm theo số tiền cố định
+                        discountAmount = discountCode.getDiscountAmount();
+                    }
+
+                    totalAfterDiscount = subtotal.subtract(discountAmount);
+                    if (totalAfterDiscount.compareTo(BigDecimal.ZERO) < 0) {
+                        totalAfterDiscount = BigDecimal.ZERO;
+                    }
+                }
+            }
+
+            OrderItem orderItem = OrderItem.builder()
+                    .order(order)
+                    .bookId(book.getId())
+                    .sellerId(book.getSeller().getId())
+                    .sellerName(book.getSeller().getStoreName())
+                    .bookTitle(book.getTitle())
+                    .bookPrice(bookPrice)
+                    .quantity(quantity)
+                    .discountCode(itemReq.getDiscountCode())
+                    .discountAmount(discountAmount)
+                    .totalAmount(totalAfterDiscount)
+                    .build();
+
+            orderItems.add(orderItem);
+
+            totalOrder = totalOrder.add(totalAfterDiscount);
+        }
 
         order.setOrderItems(orderItems);
-
-        BigDecimal total = orderItems.stream()
-                .map(oi -> oi.getBookPrice().multiply(BigDecimal.valueOf(oi.getQuantity())))
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
-
-        order.setTotalPrice(total);
+        order.setTotalPrice(totalOrder);
 
         Order saved = orderRepository.save(order);
 
-        return ResponseEntity.ok(new ResponseData<>(
-                AppException.SUCCESS.getCode(),
-                "Order created successfully",
-                OrderDTO.fromEntity(saved)
-        ));
+        return ResponseEntity.ok(
+                new ResponseData<>(
+                        AppException.SUCCESS.getCode(),
+                        "Order created successfully",
+                        OrderDTO.fromEntity(saved)
+                )
+        );
     }
+
 
 
     public ResponseEntity<ResponseData<OrderDTO>> updateOrderStatus(Long id, UpdateOrderStatus request) {

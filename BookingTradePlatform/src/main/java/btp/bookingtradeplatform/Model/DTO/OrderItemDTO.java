@@ -26,6 +26,12 @@ public class OrderItemDTO {
 
     private Long sellerId;
 
+    private String discountCode;
+
+    private BigDecimal discountAmount;
+
+    private BigDecimal totalAmount;
+
     // Chuyển từ Entity → DTO
     public static OrderItemDTO fromEntity(OrderItem item) {
         if (item == null) return null;
@@ -38,6 +44,9 @@ public class OrderItemDTO {
                 .bookTitle(item.getBookTitle())
                 .bookPrice(item.getBookPrice())
                 .quantity(item.getQuantity())
+                .discountCode(item.getDiscountCode())
+                .discountAmount(item.getDiscountAmount())
+                .totalAmount(item.getTotalAmount())
                 .build();
     }
 }

@@ -22,5 +22,6 @@ public class CreateOrderRequest {
     public static class OrderItemRequest {
         private Long bookId;
         private int quantity;
+        private String discountCode;
     }
 }

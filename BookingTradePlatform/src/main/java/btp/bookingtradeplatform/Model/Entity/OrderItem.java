@@ -33,4 +33,10 @@ public class OrderItem {
     private BigDecimal bookPrice;
 
     private int quantity;
+
+    private String discountCode;
+
+    private BigDecimal discountAmount;
+
+    private BigDecimal totalAmount;
 }
