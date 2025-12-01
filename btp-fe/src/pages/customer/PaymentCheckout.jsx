@@ -121,12 +121,21 @@ export default function PaymentCheckout() {
     const cartItems = selectedCartItems.length > 0 ? selectedCartItems : allCartItems;
     const totalPrice = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
 
-    // Fetch available discounts for user based on order value
+    const firstBookId = cartItems.length > 0 ? cartItems[0].bookId : 0;
+
+    // Fetch available discounts
     const { data: discountsData, isLoading: discountsLoading } = useCustomQuery(
-        ["availableDiscounts", userId, totalPrice],
-        () => discountApi.getDiscountForUser(userId, totalPrice),
+        ["availableDiscounts", userId, totalPrice, firstBookId], // Thêm firstBookId vào key để cache cập nhật khi list đổi
+        () => {
+            return discountApi.getDiscountAvailbleForUser({
+                userId: userId,
+                bookId: firstBookId, // Sử dụng ID sách thực tế thay vì 0
+                orderValue: totalPrice
+            });
+        },
         {
-            enabled: !!userId && totalPrice > 0,
+            // Chỉ gọi khi có user, có sách và tổng tiền > 0
+            enabled: !!userId && cartItems.length > 0 && totalPrice > 0,
         }
     );
 
@@ -223,32 +232,6 @@ export default function PaymentCheckout() {
         }
     );
 
-    // // Create MoMo payment mutation
-    // const createMomoMutation = useCustomMutation(
-    //     (orderId) => paymentApi.createVNPay(orderId),
-    //     null,
-    //     {
-    //         onSuccess: (response) => {
-    //             console.log("MoMo Response:", response);
-    //
-    //             const payUrl = response?.payUrl;
-    //
-    //             // Check if payUrl exists and resultCode is success
-    //             if (payUrl) {
-    //                 // Redirect to MoMo payment page (shows QR code)
-    //                 window.location.href = payUrl;
-    //             } else {
-    //                 console.error("MoMo payment failed:", response);
-    //                 toast.error(response?.message || "Không thể tạo thanh toán MoMo");
-    //             }
-    //         },
-    //         onError: (error) => {
-    //             console.error("MoMo API Error:", error);
-    //             toast.error(error?.message || "Không thể tạo thanh toán MoMo");
-    //         },
-    //     }
-    // );
-
     const createCODPayment = (order) => {
         createCODPaymentMutation.mutate({
             orderId: order.id,
@@ -257,12 +240,6 @@ export default function PaymentCheckout() {
             discount: discountAmount,
         });
     };
-
-    // const createMomoPayment = (order) => {
-    //     createMomoMutation.mutate({
-    //         orderId: order.id,
-    //     });
-    // };
 
     const cartCount = cartItems.reduce((acc, item) => acc + item.quantity, 0);
 
@@ -363,10 +340,17 @@ export default function PaymentCheckout() {
         // Prepare order data - matching API specification
         const orderData = {
             customerId: userId,
-            items: cartItems.map((item) => ({
-                bookId: item.bookId,
-                quantity: item.quantity,
-            })),
+            items: cartItems.map((item) => {
+                // Kiểm tra xem item này có được áp dụng mã giảm giá đang chọn không
+                const isApplicable = selectedDiscount?.applicableBookIds?.includes(item.bookId);
+
+                return {
+                    bookId: item.bookId,
+                    quantity: item.quantity,
+                    // Thêm discountCode nếu item nằm trong danh sách áp dụng
+                    discountCode: isApplicable ? selectedDiscount.code : null
+                };
+            }),
         };
 
         createOrderMutation.mutate(orderData);

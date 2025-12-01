@@ -522,10 +522,10 @@ export default function CustomerOrders() {
                                                     >
                                                         <img
                                                             src={
-                                                                item.imgUrl ||
+                                                                item.coverImage ||
                                                                 "https://via.placeholder.com/80x100"
                                                             }
-                                                            alt={item.bookName}
+                                                            alt={item.bookTitle}
                                                             className="w-16 h-20 object-cover rounded border cursor-pointer hover:opacity-80 transition-opacity"
                                                             onClick={() => navigate(`/books/${item.bookId}`)}
                                                         />
@@ -534,10 +534,10 @@ export default function CustomerOrders() {
                                                                 className="font-medium line-clamp-1 mb-1 cursor-pointer hover:text-primary transition-colors"
                                                                 onClick={() => navigate(`/books/${item.bookId}`)}
                                                             >
-                                                                {item.bookName}
+                                                                {item.bookTitle}
                                                             </h4>
                                                             <p className="text-sm text-muted-foreground mb-1">
-                                                                {item.storeName}
+                                                                {item.sellerName}
                                                             </p>
                                                             <div className="flex items-center justify-between">
                                                                 <span className="text-sm text-muted-foreground">
@@ -545,7 +545,7 @@ export default function CustomerOrders() {
                                                                 </span>
                                                                 <div className="flex items-center gap-2">
                                                                     <span className="font-semibold text-primary">
-                                                                        {(item.price * item.quantity).toLocaleString(
+                                                                        {(item.totalAmount).toLocaleString(
                                                                             "vi-VN"
                                                                         )}
                                                                         ₫
@@ -748,7 +748,7 @@ export default function CustomerOrders() {
                                         {selectedOrderDetail.cartItems?.map((item, index) => (
                                             <div key={item.bookId} className="flex gap-4 pb-4 border-b last:border-0">
                                                 <img
-                                                    src={item.imgUrl || "https://via.placeholder.com/80x100"}
+                                                    src={item.coverImage || "https://via.placeholder.com/80x100"}
                                                     alt={item.bookTitle}
                                                     className="w-20 h-24 object-cover rounded border"
                                                 />
@@ -766,8 +766,13 @@ export default function CustomerOrders() {
                                                             <p className="text-sm text-muted-foreground">
                                                                 {item.bookPrice.toLocaleString("vi-VN")}₫ x {item.quantity}
                                                             </p>
+                                                            {item.discountAmount !== 0 && (
+                                                                <p className="text-sm text-green-600">
+                                                                    Giảm: {item.discountAmount.toLocaleString()}đ
+                                                                </p>
+                                                            )}
                                                             <p className="font-semibold text-primary">
-                                                                {(item.price * item.quantity).toLocaleString("vi-VN")}₫
+                                                                {(item.totalAmount).toLocaleString("vi-VN")}₫
                                                             </p>
                                                         </div>
                                                     </div>

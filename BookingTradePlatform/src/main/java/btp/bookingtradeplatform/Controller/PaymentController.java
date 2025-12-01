@@ -49,8 +49,8 @@ public class PaymentController {
 
     @PostMapping("/confirm/{id}")
     public ResponseEntity<ResponseData<Void>> confirmPayment(
-            @PathVariable Long paymentId){
-        return paymentService.confirmPayment(paymentId);
+            @PathVariable Long id){
+        return paymentService.confirmPayment(id);
     }
 
 

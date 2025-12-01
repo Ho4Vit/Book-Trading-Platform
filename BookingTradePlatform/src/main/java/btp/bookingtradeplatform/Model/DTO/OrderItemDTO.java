@@ -16,6 +16,8 @@ public class OrderItemDTO {
 
     private Long bookId;
 
+    private String coverImage;
+
     private String sellerName;
 
     private String bookTitle;
@@ -39,6 +41,7 @@ public class OrderItemDTO {
         return OrderItemDTO.builder()
                 .id(item.getId())
                 .bookId(item.getBookId())
+                .coverImage(item.getCoverImage())
                 .sellerName(item.getSellerName())
                 .sellerId(item.getSellerId())
                 .bookTitle(item.getBookTitle())

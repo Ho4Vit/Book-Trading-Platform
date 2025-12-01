@@ -114,6 +114,7 @@ public class OrderService {
                     .sellerId(book.getSeller().getId())
                     .sellerName(book.getSeller().getStoreName())
                     .bookTitle(book.getTitle())
+                    .coverImage(book.getCoverImage())
                     .bookPrice(bookPrice)
                     .quantity(quantity)
                     .discountCode(itemReq.getDiscountCode())

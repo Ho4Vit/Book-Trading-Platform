@@ -472,28 +472,17 @@ export default function SellerBooks() {
                                 placeholder="Nhập tên tác giả"
                             />
                         </div>
-                        <div className="grid gap-2">
-                            <Label htmlFor="price">Giá *</Label>
-                            <Input
-                                id="price"
-                                type="number"
-                                value={bookForm.price}
-                                onChange={(e) =>
-                                    setBookForm({ ...bookForm, price: e.target.value })
-                                }
-                                placeholder="0"
-                            />
-                        </div>
                         <div className="grid grid-cols-2 gap-4">
                             <div className="grid gap-2">
-                                <Label htmlFor="language">Ngôn ngữ</Label>
+                                <Label htmlFor="price">Giá *</Label>
                                 <Input
-                                    id="language"
-                                    value={bookForm.language}
+                                    id="price"
+                                    type="number"
+                                    value={bookForm.price}
                                     onChange={(e) =>
-                                        setBookForm({ ...bookForm, language: e.target.value })
+                                        setBookForm({...bookForm, price: e.target.value})
                                     }
-                                    placeholder="Tiếng Việt"
+                                    placeholder="0"
                                 />
                             </div>
                             <div className="grid gap-2">
@@ -503,23 +492,21 @@ export default function SellerBooks() {
                                     type="number"
                                     value={bookForm.pageCount}
                                     onChange={(e) =>
-                                        setBookForm({ ...bookForm, pageCount: e.target.value })
+                                        setBookForm({...bookForm, pageCount: e.target.value})
                                     }
                                     placeholder="0"
                                 />
                             </div>
-                        </div>
-                        <div className="grid grid-cols-2 gap-4">
                             <div className="grid gap-2">
                                 <Label htmlFor="format">Định dạng</Label>
                                 <Select
                                     value={bookForm.format}
                                     onValueChange={(value) =>
-                                        setBookForm({ ...bookForm, format: value })
+                                        setBookForm({...bookForm, format: value})
                                     }
                                 >
                                     <SelectTrigger>
-                                        <SelectValue placeholder="Chọn định dạng" />
+                                        <SelectValue placeholder="Chọn định dạng"/>
                                     </SelectTrigger>
                                     <SelectContent>
                                         <SelectItem value="PAPERBACK">Bìa mềm</SelectItem>
@@ -529,26 +516,59 @@ export default function SellerBooks() {
                                 </Select>
                             </div>
                             <div className="grid gap-2">
-                                <Label htmlFor="seriesId">Series</Label>
+                                <Label htmlFor="language">Ngôn ngữ</Label>
+                                {/*<Input*/}
+                                {/*    id="language"*/}
+                                {/*    value={bookForm.language}*/}
+                                {/*    onChange={(e) =>*/}
+                                {/*        setBookForm({ ...bookForm, language: e.target.value })*/}
+                                {/*    }*/}
+                                {/*    placeholder="Tiếng Việt"*/}
+                                {/*/>*/}
                                 <Select
-                                    value={bookForm.seriesId}
+                                    value={bookForm.language}
                                     onValueChange={(value) =>
-                                        setBookForm({ ...bookForm, seriesId: value })
+                                        setBookForm({...bookForm, language: value})
                                     }
                                 >
                                     <SelectTrigger>
-                                        <SelectValue placeholder="Chọn series" />
+                                        <SelectValue placeholder="Chọn ngôn ngữ"/>
                                     </SelectTrigger>
                                     <SelectContent>
-                                        {series.map((s) => (
-                                            <SelectItem key={s.id} value={s.id.toString()}>
-                                                {s.name}
-                                            </SelectItem>
-                                        ))}
+                                        <SelectItem value="Tiếng Việt">Tiếng Việt</SelectItem>
+                                        <SelectItem value="Tiếng Anh">Tiếng Anh</SelectItem>
+                                        <SelectItem value="Tiếng Nga">Tiếng Nga</SelectItem>
+                                        <SelectItem value="Tiếng Pháp">Tiếng Pháp</SelectItem>
+                                        <SelectItem value="Tiếng Đức">Tiếng Đức</SelectItem>
+                                        <SelectItem value="Tiếng Trung">Tiếng Trung</SelectItem>
+                                        <SelectItem value="Tiếng Nhật">Tiếng Nhật</SelectItem>
                                     </SelectContent>
                                 </Select>
                             </div>
                         </div>
+                        {/*<div className="grid grid-cols-2 gap-4">*/}
+
+                        {/*    /!*<div className="grid gap-2">*!/*/}
+                        {/*    /!*    <Label htmlFor="seriesId">Series</Label>*!/*/}
+                        {/*    /!*    <Select*!/*/}
+                        {/*    /!*        value={bookForm.seriesId}*!/*/}
+                        {/*    /!*        onValueChange={(value) =>*!/*/}
+                        {/*    /!*            setBookForm({ ...bookForm, seriesId: value })*!/*/}
+                        {/*    /!*        }*!/*/}
+                        {/*    /!*    >*!/*/}
+                        {/*    /!*        <SelectTrigger>*!/*/}
+                        {/*    /!*            <SelectValue placeholder="Chọn series" />*!/*/}
+                        {/*    /!*        </SelectTrigger>*!/*/}
+                        {/*    /!*        <SelectContent>*!/*/}
+                        {/*    /!*            {series.map((s) => (*!/*/}
+                        {/*    /!*                <SelectItem key={s.id} value={s.id.toString()}>*!/*/}
+                        {/*    /!*                    {s.name}*!/*/}
+                        {/*    /!*                </SelectItem>*!/*/}
+                        {/*    /!*            ))}*!/*/}
+                        {/*    /!*        </SelectContent>*!/*/}
+                        {/*    /!*    </Select>*!/*/}
+                        {/*    /!*</div>*!/*/}
+                        {/*</div>*/}
 
                         {/* Book Image Upload Component */}
                         <BookImageUpload

@@ -39,7 +39,7 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Search, Package, Eye, Truck, ArrowUpDown } from "lucide-react";
+import { Search, Package, Eye, Truck, ArrowUpDown, DollarSign } from "lucide-react";
 import toast from "react-hot-toast";
 import { useAuthStore } from "@/store/authStore";
 
@@ -101,6 +101,38 @@ export default function SellerOrders() {
             },
         }
     );
+
+    const confirmPaymentMutation = useCustomMutation(
+        (paymentId) => paymentApi.confirmPayment(paymentId),
+        "POST",
+        {
+            // Cần làm mới data payment để cập nhật trạng thái
+            invalidateKeys: ["all-payments"],
+            onSuccess: () => {
+                toast.success("Đã xác nhận thanh toán COD!");
+            },
+            onError: (error) => {
+                toast.error(error?.message || "Không thể xác nhận thanh toán");
+            }
+        }
+    );
+
+    // Hàm xử lý sự kiện click xác nhận thanh toán
+    const handleConfirmPayment = (paymentId) => {
+        if (!paymentId) return;
+        confirmPaymentMutation.mutate(paymentId);
+    };
+
+    // Helper kiểm tra điều kiện hiển thị nút (PENDING & COD & Payment PENDING)
+    const canConfirmCOD = (order) => {
+        const payment = paymentMap[order.id];
+        return (
+            order.status === "DELIVERED" &&          // Đơn hàng đang chờ xử lý
+            payment &&                         // Có thông tin thanh toán
+            payment.method === "COD" &&        // Là COD
+            payment.status === "PENDING"       // Thanh toán chưa được xác nhận
+        );
+    };
 
     // Filter and sort orders
     const filteredOrders = sellerOrders
@@ -470,7 +502,7 @@ export default function SellerOrders() {
                                         <div key={index} className="p-4 flex items-center justify-between">
                                             <div className="flex items-center gap-3">
                                                 <img
-                                                    src={item.imgUrl || "https://via.placeholder.com/60"}
+                                                    src={item.coverImage || "https://via.placeholder.com/60"}
                                                     alt={item.bookTitle}
                                                     className="w-12 h-12 rounded object-cover"
                                                 />
@@ -479,10 +511,15 @@ export default function SellerOrders() {
                                                     <p className="text-sm text-muted-foreground">
                                                         SL: {item.quantity} × {item.bookPrice.toLocaleString()}đ
                                                     </p>
+                                                    {item.discountAmount !== 0 && (
+                                                        <p className="text-sm text-green-600">
+                                                            Giảm: {item.discountAmount.toLocaleString()}đ (Code: {item.discountCode})
+                                                        </p>
+                                                    )}
                                                 </div>
                                             </div>
                                             <p className="font-semibold">
-                                                {(item.bookPrice * item.quantity).toLocaleString()}đ
+                                                {(item.totalAmount).toLocaleString()}đ
                                             </p>
                                         </div>
                                     ))}
@@ -499,6 +536,16 @@ export default function SellerOrders() {
 
                             {/* Actions */}
                             <div className="flex gap-2 justify-end">
+                                {selectedOrder && canConfirmCOD(selectedOrder) && (
+                                    <Button
+                                        className="bg-green-600 hover:bg-green-700 text-white"
+                                        onClick={() => handleConfirmPayment(paymentMap[selectedOrder.id].id)}
+                                        disabled={confirmPaymentMutation.isPending}
+                                    >
+                                        <DollarSign className="h-4 w-4 mr-2" />
+                                        Xác nhận thanh toán COD
+                                    </Button>
+                                )}
                                 {selectedOrder.status === "PENDING" && !canCancelOrder(selectedOrder) && (
                                     <Button
                                         onClick={() => {

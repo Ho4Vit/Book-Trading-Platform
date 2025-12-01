@@ -24,6 +24,8 @@ public class OrderItem {
 
     private Long bookId;
 
+    private String coverImage;
+
     private Long sellerId;
     // Snapshot dữ liệu book tại thời điểm đặt hàng
     private String sellerName;

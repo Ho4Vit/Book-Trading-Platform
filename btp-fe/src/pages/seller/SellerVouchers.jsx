@@ -93,8 +93,6 @@ export default function SellerVouchers() {
         }
     );
 
-    const seller = sellerData?.data || sellerData;
-
     // Get seller's book IDs
     const sellerBooks = Array.isArray(booksData?.data)
         ? booksData.data
@@ -244,7 +242,16 @@ export default function SellerVouchers() {
     };
 
     const isExpired = (expiryDate) => {
-        return new Date(expiryDate) < new Date();
+        if (!expiryDate) return false;
+
+        // Tạo đối tượng Date từ ngày hết hạn
+        const exp = new Date(expiryDate);
+
+        // Cài đặt thời gian thành cuối ngày (23 giờ, 59 phút, 59 giây, 999 mili giây)
+        exp.setHours(23, 59, 59, 999);
+
+        // So sánh: Nếu thời điểm cuối ngày đó nhỏ hơn hiện tại thì mới là hết hạn
+        return exp < new Date();
     };
 
     if (sellerLoading || booksLoading || discountsLoading) {
