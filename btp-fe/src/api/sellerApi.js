@@ -6,7 +6,7 @@ export const sellerApi = {
     getSellerById: (id) => apiClient.get(`/v1/sellers/getbyid/${id}`),
     getSellerByEmail: (email) => apiClient.get(`/v1/sellers/getbyemail`, { params: { email } }),
     getAllSellers: () => apiClient.get(`/v1/sellers/getall`),
-    updateAvatar: (id, data) => apiClient.post(`/v1/sellers/avartat/${id}`, data, {
+    updateAvatar: (id, data) => apiClient.post(`/v1/sellers/avatar/${id}`, data, {
         headers: {
             'Content-Type': 'multipart/form-data'
         }

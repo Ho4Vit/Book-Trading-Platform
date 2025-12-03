@@ -195,14 +195,6 @@ export default function AdminLayout() {
                                         <BarChart3 className="w-4 h-4" />
                                         Tổng quan
                                     </DropdownMenuItem>
-                                    <DropdownMenuItem
-                                        onClick={() => navigate("/admin/settings")}
-                                        className="gap-2 cursor-pointer"
-                                    >
-                                        <Settings className="w-4 h-4" />
-                                        Cài đặt
-                                    </DropdownMenuItem>
-
                                     <DropdownMenuSeparator />
                                     <DropdownMenuItem
                                         onClick={handleLogout}
