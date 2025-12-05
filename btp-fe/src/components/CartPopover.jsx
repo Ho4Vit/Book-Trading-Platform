@@ -354,12 +354,6 @@ export default function CartPopover() {
                             >
                                 Xem giỏ hàng
                             </Button>
-                            <Button
-                                className="flex-1 bg-gradient-to-r from-primary via-purple-600 to-pink-600 hover:opacity-90"
-                                onClick={handleCheckout}
-                            >
-                                Thanh toán
-                            </Button>
                         </div>
                     </div>
                 )}

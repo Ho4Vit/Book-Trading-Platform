@@ -203,23 +203,17 @@ export default function CustomerCart() {
     // Toggle individual item selection
     const handleToggleItem = (bookId) => {
         setSelectedItems(prev => {
-            const newSet = new Set(prev);
-            if (newSet.has(bookId)) {
-                newSet.delete(bookId);
-            } else {
+            const newSet = new Set();
+
+            // Logic:
+            // - Nếu click vào item đang chọn -> Bỏ chọn (newSet rỗng).
+            // - Nếu click vào item mới -> Chọn item đó (newSet chỉ chứa item mới, item cũ tự mất).
+            if (!prev.has(bookId)) {
                 newSet.add(bookId);
             }
+
             return newSet;
         });
-    };
-
-    // Select all items
-    const handleSelectAll = (checked) => {
-        if (checked) {
-            setSelectedItems(new Set(cartItems.map(item => item.bookId)));
-        } else {
-            setSelectedItems(new Set());
-        }
     };
 
     // Apply discount code
@@ -302,9 +296,6 @@ export default function CustomerCart() {
         selectedCartItems,
         appliedDiscount
     );
-
-    // Check if all items are selected
-    const allItemsSelected = cartItems.length > 0 && selectedItems.size === cartItems.length;
 
     // Fetch available vouchers for user when selected items change
     React.useEffect(() => {
@@ -423,18 +414,6 @@ export default function CustomerCart() {
                                 </p>
                             </div>
                         </div>
-                        {cartItems.length > 0 && (
-                            <div className="flex items-center gap-2">
-                                <Checkbox
-                                    id="select-all"
-                                    checked={allItemsSelected}
-                                    onCheckedChange={handleSelectAll}
-                                />
-                                <Label htmlFor="select-all" className="cursor-pointer font-medium">
-                                    Chọn tất cả ({selectedItems.size}/{cartItems.length})
-                                </Label>
-                            </div>
-                        )}
                     </div>
 
                     {cartItems.length === 0 ? (
