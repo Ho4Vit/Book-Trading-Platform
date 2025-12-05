@@ -85,7 +85,7 @@ public class SellerService {
         seller.setStoreDescription(sellers.getStoreDescription());
         seller.setRole(Role.SELLER);
         seller.setIsActive(true);
-        seller.setIsEmailVerified(false);
+        seller.setIsEmailVerified(true);
         seller.setCreatedAt(LocalDateTime.now());
 
         Seller savedSeller = sellerRepository.save(seller);
